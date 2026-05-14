@@ -1,0 +1,555 @@
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  TextInput,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useOrderStore } from '@/store/orderStore';
+import { useAuthStore } from '@/store/authStore';
+import { messagesAPI, reviewsAPI } from '@/lib/api';
+import { Message, STATUS_META, CATEGORY_META } from '@/types';
+import { timeAgo, formatCurrency } from '@/lib/utils';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
+import { getSocket, joinOrderRoom, leaveOrderRoom, emitTypingStart, emitTypingStop } from '@/lib/socket';
+import Toast from 'react-native-toast-message';
+import * as Haptics from 'expo-haptics';
+
+export default function OrderDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const { activeOrder, isLoading, fetchOrderById, updateOrderStatus, acceptOrder, acceptBid, placeBid } = useOrderStore();
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [bidPrice, setBidPrice] = useState('');
+  const [bidMessage, setBidMessage] = useState('');
+  const [bidSubmitting, setBidSubmitting] = useState(false);
+  const [bidSuccess, setBidSuccess] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewDone, setReviewDone] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      fetchOrderById(id);
+      loadMessages(id);
+      joinOrderRoom(id);
+
+      const socket = getSocket();
+      socket?.on('new_message', ({ message }: { message: Message }) => {
+        setMessages((prev) => [...prev, message]);
+      });
+      socket?.on('order_status_update', () => {
+        fetchOrderById(id);
+      });
+      socket?.on('new_bid', () => {
+        fetchOrderById(id);
+      });
+    }
+    return () => {
+      if (id) leaveOrderRoom(id);
+      const socket = getSocket();
+      socket?.off('new_message');
+      socket?.off('order_status_update');
+      socket?.off('new_bid');
+    };
+  }, [id]);
+
+  const loadMessages = async (orderId: string) => {
+    try {
+      const { data } = await messagesAPI.getMessages(orderId);
+      setMessages(data.messages || []);
+    } catch {}
+  };
+
+  const sendMessage = async () => {
+    if (!chatInput.trim() || !id) return;
+    const content = chatInput.trim();
+    setChatInput('');
+    try {
+      await messagesAPI.send(id, content);
+    } catch {}
+  };
+
+  const handleStatusUpdate = async (status: string) => {
+    if (!id) return;
+    try {
+      await updateOrderStatus(id, status);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Toast.show({ type: 'success', text1: `Status updated to ${status}` });
+    } catch {
+      Toast.show({ type: 'error', text1: 'Failed to update status' });
+    }
+  };
+
+  const handleAcceptOrder = async () => {
+    if (!id) return;
+    try {
+      await acceptOrder(id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Toast.show({ type: 'success', text1: 'Order accepted! 🎉' });
+    } catch {
+      Toast.show({ type: 'error', text1: 'Failed to accept order' });
+    }
+  };
+
+  const handlePlaceBid = async () => {
+    if (!bidPrice || !id) {
+      Toast.show({ type: 'error', text1: 'Please enter a price' });
+      return;
+    }
+    setBidSubmitting(true);
+    try {
+      await placeBid(id, {
+        price: parseFloat(bidPrice),
+        message: bidMessage || undefined,
+      });
+      setBidSuccess(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to place bid';
+      Toast.show({ type: 'error', text1: msg });
+    }
+    setBidSubmitting(false);
+  };
+
+  const handleAcceptBid = async (bidId: string) => {
+    if (!id) return;
+    try {
+      await acceptBid(id, bidId);
+      Toast.show({ type: 'success', text1: 'Bid accepted! Provider assigned.' });
+    } catch {
+      Toast.show({ type: 'error', text1: 'Failed to accept bid' });
+    }
+  };
+
+  const handleReview = async () => {
+    if (!activeOrder) return;
+    const toUser = user?._id === activeOrder.userId._id
+      ? activeOrder.assignedTo?._id
+      : activeOrder.userId._id;
+    if (!toUser) return;
+    try {
+      await reviewsAPI.createReview({ toUser, orderId: activeOrder._id, rating, comment: reviewComment });
+      setReviewDone(true);
+      Toast.show({ type: 'success', text1: 'Review submitted! ⭐' });
+    } catch {
+      Toast.show({ type: 'error', text1: 'Failed to submit review' });
+    }
+  };
+
+  if (isLoading && !activeOrder) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color="#8b5cf6" size="large" />
+      </View>
+    );
+  }
+
+  if (!activeOrder) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.notFound}>Order not found</Text>
+      </View>
+    );
+  }
+
+  const order = activeOrder;
+  const isOwner = user?._id === order.userId._id;
+  const isProvider = user?._id === order.assignedTo?._id;
+  const statusMeta = STATUS_META[order.status];
+  const catMeta = CATEGORY_META[order.category];
+
+  const STATUS_STEPS = ['CREATED', 'BROADCASTED', 'ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
+
+  return (
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      {/* Status banner */}
+      <Card shadow style={[styles.statusBanner, { borderLeftWidth: 3, borderLeftColor: statusMeta.color }]}>
+        <View style={styles.statusTop}>
+          <View style={[styles.catIcon, { backgroundColor: catMeta.bg }]}>
+            <Text style={{ fontSize: 22 }}>{catMeta.icon}</Text>
+          </View>
+          <View style={styles.statusInfo}>
+            <View style={styles.statusBadges}>
+              <Badge label={statusMeta.label} color={statusMeta.color} bg={statusMeta.bg} />
+              {order.urgency === 'asap' && (
+                <Badge label="⚡ ASAP" color="#fb923c" bg="rgba(249,115,22,0.12)" />
+              )}
+              <Badge
+                label={order.mode === 'bidding' ? '🔖 Bidding' : '💰 Fixed'}
+                color="#60a5fa"
+                bg="rgba(59,130,246,0.12)"
+              />
+            </View>
+            <Text style={styles.orderDesc}>{order.description}</Text>
+          </View>
+        </View>
+        {(order.finalPrice || order.budget) && (
+          <Text style={styles.price}>
+            {formatCurrency(order.finalPrice || order.budget || 0)}
+          </Text>
+        )}
+        {order.location?.address && (
+          <View style={styles.locationRow}>
+            <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.4)" />
+            <Text style={styles.locationText}>{order.location.address}</Text>
+          </View>
+        )}
+        <Text style={styles.posted}>Posted {timeAgo(order.createdAt)}</Text>
+      </Card>
+
+      {/* Parties */}
+      <View style={styles.row2}>
+        <Card style={styles.partyCard}>
+          <Text style={styles.partyRole}>Customer</Text>
+          <Avatar name={order.userId.name} size={40} />
+          <Text style={styles.partyName}>{order.userId.name}</Text>
+          {order.userId.hostel && (
+            <Text style={styles.partyMeta}>{order.userId.hostel}</Text>
+          )}
+        </Card>
+        {order.assignedTo && (
+          <Card style={styles.partyCard}>
+            <Text style={styles.partyRole}>Provider</Text>
+            <Avatar name={order.assignedTo.name} size={40} online />
+            <Text style={styles.partyName}>{order.assignedTo.name}</Text>
+            <Text style={styles.partyMeta}>⭐ {order.assignedTo.rating.toFixed(1)}</Text>
+          </Card>
+        )}
+      </View>
+
+      {/* Status Timeline */}
+      <Card shadow>
+        <Text style={styles.sectionTitle}>Progress</Text>
+        {STATUS_STEPS.filter((s) => s !== 'CANCELLED').map((step, i) => {
+          const hist = order.statusHistory.find((h) => h.status === step);
+          const isCurrent = order.status === step;
+          const isPast = STATUS_STEPS.indexOf(step) < STATUS_STEPS.indexOf(order.status);
+          const isCancelled = order.status === 'CANCELLED';
+          return (
+            <View key={step} style={styles.timelineItem}>
+              <View style={styles.timelineLeft}>
+                <View
+                  style={[
+                    styles.timelineDot,
+                    (isPast || isCurrent) && !isCancelled && styles.timelineDotDone,
+                    isCurrent && !isCancelled && styles.timelineDotCurrent,
+                  ]}
+                />
+                {i < STATUS_STEPS.length - 2 && (
+                  <View
+                    style={[
+                      styles.timelineLine,
+                      isPast && !isCancelled && styles.timelineLineDone,
+                    ]}
+                  />
+                )}
+              </View>
+              <View style={styles.timelineRight}>
+                <Text
+                  style={[
+                    styles.timelineLabel,
+                    (isPast || isCurrent) && !isCancelled && styles.timelineLabelDone,
+                  ]}
+                >
+                  {step.replace('_', ' ')}
+                  {isCurrent && !isCancelled && ' ← now'}
+                </Text>
+                {hist && (
+                  <Text style={styles.timelineTime}>{timeAgo(hist.timestamp)}</Text>
+                )}
+              </View>
+            </View>
+          );
+        })}
+        {order.status === 'CANCELLED' && (
+          <View style={[styles.timelineItem, { marginTop: 8 }]}>
+            <Ionicons name="close-circle" size={20} color="#ef4444" />
+            <Text style={[styles.timelineLabel, { color: '#f87171', marginLeft: 8 }]}>
+              CANCELLED{order.cancelReason ? ` — ${order.cancelReason}` : ''}
+            </Text>
+          </View>
+        )}
+      </Card>
+
+      {/* Action buttons */}
+      {isOwner && order.status === 'DELIVERED' && (
+        <Button
+          title="✅ Confirm Received"
+          onPress={() => handleStatusUpdate('COMPLETED')}
+          fullWidth
+          size="lg"
+        />
+      )}
+      {isOwner && ['CREATED', 'BROADCASTED'].includes(order.status) && (
+        <Button
+          title="Cancel Request"
+          onPress={() => handleStatusUpdate('CANCELLED')}
+          variant="danger"
+          fullWidth
+        />
+      )}
+      {isProvider && order.status === 'ACCEPTED' && (
+        <Button
+          title="▶ Start Order"
+          onPress={() => handleStatusUpdate('IN_PROGRESS')}
+          fullWidth
+          size="lg"
+        />
+      )}
+      {isProvider && order.status === 'BID_SELECTED' && (
+        <Button
+          title="▶ Start Order"
+          onPress={() => handleStatusUpdate('IN_PROGRESS')}
+          fullWidth
+          size="lg"
+        />
+      )}
+      {isProvider && order.status === 'IN_PROGRESS' && (
+        <Button
+          title="📦 Mark Delivered"
+          onPress={() => handleStatusUpdate('DELIVERED')}
+          fullWidth
+          size="lg"
+        />
+      )}
+      {/* Accept fixed-price order */}
+      {!isOwner && order.mode === 'fixed' && ['CREATED', 'BROADCASTED'].includes(order.status) && !order.assignedTo && (
+        <Button
+          title="Accept This Order"
+          onPress={handleAcceptOrder}
+          fullWidth
+          size="lg"
+        />
+      )}
+
+      {/* Bid section */}
+      {order.mode === 'bidding' && ['CREATED', 'BROADCASTED'].includes(order.status) && !isOwner && (
+        <Card shadow>
+          <Text style={styles.sectionTitle}>Place Your Bid</Text>
+          {bidSuccess ? (
+            <View style={styles.bidSuccess}>
+              <Text style={styles.bidSuccessEmoji}>🎉</Text>
+              <Text style={styles.bidSuccessText}>Bid placed! Waiting for acceptance.</Text>
+            </View>
+          ) : (
+            <>
+              <TextInput
+                value={bidPrice}
+                onChangeText={setBidPrice}
+                placeholder="Your price (₹)"
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                keyboardType="numeric"
+                style={styles.bidInput}
+              />
+              <TextInput
+                value={bidMessage}
+                onChangeText={setBidMessage}
+                placeholder="Optional message…"
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                style={[styles.bidInput, { marginTop: 8 }]}
+              />
+              <Button
+                title={bidSubmitting ? 'Placing bid…' : 'Place Bid →'}
+                onPress={handlePlaceBid}
+                loading={bidSubmitting}
+                fullWidth
+                style={{ marginTop: 10 }}
+              />
+            </>
+          )}
+        </Card>
+      )}
+
+      {/* Bids list (owner view) */}
+      {isOwner && order.mode === 'bidding' && (order.bids?.length ?? 0) > 0 && (
+        <Card shadow>
+          <Text style={styles.sectionTitle}>Bids ({order.bids!.length})</Text>
+          {order.bids!.map((bid) => (
+            <View key={bid._id} style={styles.bidCard}>
+              <Avatar name={bid.userId.name} size={36} />
+              <View style={styles.bidInfo}>
+                <Text style={styles.bidName}>{bid.userId.name}</Text>
+                <Text style={styles.bidPrice}>{formatCurrency(bid.price)}</Text>
+                {bid.message && (
+                  <Text style={styles.bidMsg}>{bid.message}</Text>
+                )}
+              </View>
+              {bid.status === 'accepted' ? (
+                <Badge label="Selected ✓" color="#4ade80" bg="rgba(34,197,94,0.12)" />
+              ) : (
+                ['CREATED', 'BROADCASTED'].includes(order.status) && (
+                  <Button
+                    title="Accept"
+                    onPress={() => handleAcceptBid(bid._id)}
+                    size="sm"
+                  />
+                )
+              )}
+            </View>
+          ))}
+        </Card>
+      )}
+
+      {/* Review */}
+      {order.status === 'COMPLETED' && (isOwner || isProvider) && !reviewDone && (
+        <Card shadow>
+          <Text style={styles.sectionTitle}>Leave a Review</Text>
+          <View style={styles.starRow}>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <TouchableOpacity key={s} onPress={() => setRating(s)}>
+                <Text style={[styles.star, s <= rating && styles.starFilled]}>★</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TextInput
+            value={reviewComment}
+            onChangeText={setReviewComment}
+            placeholder="Optional comment…"
+            placeholderTextColor="rgba(255,255,255,0.3)"
+            style={styles.bidInput}
+            multiline
+          />
+          <Button title="Submit Review" onPress={handleReview} fullWidth style={{ marginTop: 10 }} />
+        </Card>
+      )}
+
+      {/* Chat */}
+      {(isOwner || isProvider) && order.assignedTo && (
+        <Card shadow>
+          <Text style={styles.sectionTitle}>Chat</Text>
+          <View style={styles.chatMessages}>
+            {messages.slice(-10).map((msg) => {
+              const isMe = msg.senderId._id === user?._id;
+              if (msg.type === 'system') {
+                return (
+                  <Text key={msg._id} style={styles.systemMsg}>{msg.content}</Text>
+                );
+              }
+              return (
+                <View key={msg._id} style={[styles.msgRow, isMe && styles.msgRowMe]}>
+                  <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
+                    <Text style={styles.bubbleText}>{msg.content}</Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+          <View style={styles.chatInputRow}>
+            <TextInput
+              value={chatInput}
+              onChangeText={setChatInput}
+              placeholder="Message…"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              style={styles.chatTextInput}
+            />
+            <TouchableOpacity onPress={sendMessage} style={styles.sendBtn}>
+              <Ionicons name="send" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </Card>
+      )}
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  scroll: { flex: 1, backgroundColor: '#0d0d14' },
+  container: { padding: 16, gap: 12, paddingBottom: 60 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d0d14' },
+  notFound: { color: 'rgba(255,255,255,0.5)', fontSize: 15 },
+  statusBanner: { gap: 10 },
+  statusTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  catIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  statusInfo: { flex: 1, gap: 6 },
+  statusBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  orderDesc: { fontSize: 14, color: '#fff', fontWeight: '500' },
+  price: { fontSize: 20, fontWeight: '800', color: '#a78bfa' },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  locationText: { fontSize: 12, color: 'rgba(255,255,255,0.5)', flex: 1 },
+  posted: { fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+  row2: { flexDirection: 'row', gap: 10 },
+  partyCard: { flex: 1, alignItems: 'center', gap: 6, padding: 14 },
+  partyRole: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' },
+  partyName: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  partyMeta: { fontSize: 11, color: 'rgba(255,255,255,0.45)' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 10 },
+  timelineItem: { flexDirection: 'row', gap: 8, minHeight: 36 },
+  timelineLeft: { alignItems: 'center', width: 20 },
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginTop: 4,
+  },
+  timelineDotDone: { backgroundColor: '#7c3aed' },
+  timelineDotCurrent: { backgroundColor: '#a78bfa', width: 12, height: 12, borderRadius: 6 },
+  timelineLine: { flex: 1, width: 2, backgroundColor: 'rgba(255,255,255,0.1)', marginTop: 2 },
+  timelineLineDone: { backgroundColor: '#7c3aed' },
+  timelineRight: { flex: 1, paddingBottom: 8 },
+  timelineLabel: { fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: '600' },
+  timelineLabelDone: { color: '#fff' },
+  timelineTime: { fontSize: 10, color: 'rgba(255,255,255,0.3)' },
+  bidCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  bidInfo: { flex: 1 },
+  bidName: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  bidPrice: { fontSize: 15, fontWeight: '800', color: '#a78bfa' },
+  bidMsg: { fontSize: 12, color: 'rgba(255,255,255,0.45)' },
+  bidInput: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    color: '#fff',
+    fontSize: 14,
+    padding: 10,
+  },
+  bidSuccess: { alignItems: 'center', gap: 6, padding: 10 },
+  bidSuccessEmoji: { fontSize: 32 },
+  bidSuccessText: { fontSize: 13, color: '#4ade80', fontWeight: '600' },
+  starRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 10 },
+  star: { fontSize: 28, color: 'rgba(255,255,255,0.2)' },
+  starFilled: { color: '#fbbf24' },
+  chatMessages: { gap: 6, maxHeight: 200, overflow: 'scroll' },
+  msgRow: { flexDirection: 'row' },
+  msgRowMe: { justifyContent: 'flex-end' },
+  bubble: { maxWidth: '75%', borderRadius: 12, padding: 8 },
+  bubbleMe: { backgroundColor: '#7c3aed' },
+  bubbleThem: { backgroundColor: '#1a1a2e' },
+  bubbleText: { fontSize: 13, color: '#fff' },
+  systemMsg: { textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+  chatInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  chatTextInput: {
+    flex: 1,
+    backgroundColor: '#1a1a2e',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    color: '#fff',
+    fontSize: 13,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  sendBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#7c3aed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
