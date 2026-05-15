@@ -19,11 +19,11 @@ import { timeAgo } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { getSocket, joinOrderRoom, leaveOrderRoom, emitTypingStart, emitTypingStop } from '@/lib/socket';
 
-type View = 'list' | 'thread';
+type ChatView = 'list' | 'thread';
 
 export default function ChatScreen() {
   const { user } = useAuthStore();
-  const [view, setView] = useState<View>('list');
+  const [view, setView] = useState<ChatView>('list');
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);

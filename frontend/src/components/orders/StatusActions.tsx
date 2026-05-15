@@ -22,7 +22,7 @@ const OWNER_TRANSITIONS: Partial<Record<OrderStatus, { to: OrderStatus; label: s
   CREATED: { to: 'CANCELLED', label: 'Cancel Request', icon: <XCircle className="w-4 h-4" />, danger: true },
 };
 
-const PROVIDER_TRANSITIONS: Partial<Record<OrderStatus, { to: OrderStatus; label: string; icon: React.ReactNode }>> = {
+const PROVIDER_TRANSITIONS: Partial<Record<OrderStatus, { to: OrderStatus; label: string; icon: React.ReactNode; danger?: boolean }>> = {
   ACCEPTED: { to: 'IN_PROGRESS', label: 'Start Order', icon: <Play className="w-4 h-4" /> },
   BID_SELECTED: { to: 'IN_PROGRESS', label: 'Start Order', icon: <Play className="w-4 h-4" /> },
   IN_PROGRESS: { to: 'DELIVERED', label: 'Mark Delivered', icon: <CheckSquare className="w-4 h-4" /> },

@@ -25,7 +25,7 @@ export const Input = forwardRef<TextInput, InputProps>(
           {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
           <TextInput
             ref={ref}
-            style={[styles.input, leftIcon && styles.inputPaddingLeft, rightIcon && styles.inputPaddingRight]}
+            style={[styles.input, leftIcon ? styles.inputPaddingLeft : null, rightIcon ? styles.inputPaddingRight : null].filter(Boolean)}
             placeholderTextColor="rgba(255,255,255,0.35)"
             selectionColor="#8b5cf6"
             {...props}

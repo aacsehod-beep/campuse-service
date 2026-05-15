@@ -78,7 +78,7 @@ function OrderCard({ order }: { order: Order }) {
                 style={{
                   width: {
                     CREATED: '10%', BROADCASTED: '25%', ACCEPTED: '50%',
-                    BID_SELECTED: '60%', IN_PROGRESS: '80%',
+                    BID_SELECTED: '60%', IN_PROGRESS: '80%', DELIVERED: '90%', COMPLETED: '100%', CANCELLED: '0%',
                   }[order.status] || '0%',
                 }}
               />

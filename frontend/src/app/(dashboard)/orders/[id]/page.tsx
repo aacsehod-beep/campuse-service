@@ -43,7 +43,7 @@ export default function OrderDetailPage() {
   }
 
   const orderUser = typeof order.userId === 'string' ? null : order.userId as import('@/types').User;
-  const isOwner = orderUser?._id === user?._id || order.userId === user?._id;
+  const isOwner = orderUser?._id === user?._id;
   const isProvider = typeof order.assignedTo !== 'string' && order.assignedTo?._id === user?._id;
   const meta = CATEGORY_META[order.category];
   const statusMeta = STATUS_META[order.status];

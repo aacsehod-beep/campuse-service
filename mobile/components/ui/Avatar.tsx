@@ -56,7 +56,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#4f46e5',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundImage: 'linear-gradient(135deg, #6366f1, #3b82f6)',
   },
   initials: {
     color: '#ffffff',
