@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 import { usersAPI, ordersAPI } from '@/lib/api';
 import { User, Order } from '@/types';
 import { Users, Package, Ban, CheckCircle2, Loader2, Search } from 'lucide-react';
-import Image from 'next/image';
-import { generateAvatarUrl, formatCurrency, timeAgo } from '@/lib/utils';
+import UserAvatar from '@/components/ui/UserAvatar';
+import { formatCurrency, timeAgo } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -113,11 +113,10 @@ export default function AdminPage() {
                     <tr key={u._id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Image
-                            src={u.avatar || generateAvatarUrl(u.name)}
-                            alt={u.name}
-                            width={32}
-                            height={32}
+                          <UserAvatar
+                            name={u.name}
+                            avatar={u.avatar}
+                            size={32}
                             className="rounded-lg"
                           />
                           <div>

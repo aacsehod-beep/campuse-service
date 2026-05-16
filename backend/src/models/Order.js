@@ -9,7 +9,7 @@ const orderSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['food', 'print', 'notes', 'ride', 'others'],
+      enum: ['food', 'print', 'notes', 'ride', 'assessment', 'project', 'coaching', 'design', 'event', 'marketplace', 'others'],
       required: [true, 'Category is required'],
     },
     description: {

@@ -9,6 +9,7 @@ const { Server } = require('socket.io');
 const connectDB = require('./src/config/db');
 const { initializeSocket } = require('./src/socket/socketHandler');
 const rateLimiter = require('./src/middleware/rateLimiter');
+const { startOrderExpiryScheduler } = require('./src/services/orderExpiryScheduler');
 
 const authRoutes = require('./src/routes/auth');
 const orderRoutes = require('./src/routes/orders');
@@ -17,6 +18,7 @@ const userRoutes = require('./src/routes/users');
 const reviewRoutes = require('./src/routes/reviews');
 const walletRoutes = require('./src/routes/wallet');
 const messageRoutes = require('./src/routes/messages');
+const serviceRoutes = require('./src/routes/services');
 
 const app = express();
 const server = http.createServer(app);
@@ -27,15 +29,7 @@ connectDB();
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      const allowed = (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map((o) => o.trim());
-      // Allow mobile clients (no origin header) and Expo dev server
-      if (!origin || allowed.includes(origin) || origin.startsWith('http://localhost') || origin === 'http://localhost:8081') {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -43,18 +37,13 @@ const io = new Server(server, {
 
 initializeSocket(io);
 
+// Start scheduled jobs
+startOrderExpiryScheduler(io);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowed = (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map((o) => o.trim());
-    // Allow Expo dev + mobile clients (no origin) + configured origins
-    if (!origin || allowed.includes(origin) || origin.startsWith('http://localhost')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
 }));
 
@@ -79,6 +68,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/services', serviceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -67,6 +67,11 @@ const initializeSocket = (io) => {
       socket.to(`order_${orderId}`).emit('user_stop_typing', { userId });
     });
 
+    // Availability toggle — keep socket.user in sync so new_order filtering works
+    socket.on('set_availability', ({ isAvailable }) => {
+      socket.user.isAvailable = !!isAvailable;
+    });
+
     // Handle disconnect
     socket.on('disconnect', () => {
       connectedUsers.delete(userId);
