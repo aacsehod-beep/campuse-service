@@ -8,11 +8,11 @@ const {
   getNearbyProviders,
   getAllUsers,
   getMyStats,
+  getPublicProfile,
   blockUser,
   unblockUser,
   getBlockedUsers,
 } = require('../controllers/userController');
-const { getPublicProfile } = require('../controllers/serviceController');
 const { protect, adminOnly } = require('../middleware/auth');
 
 router.get('/providers/nearby', protect, getNearbyProviders);

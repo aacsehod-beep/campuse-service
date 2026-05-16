@@ -48,7 +48,7 @@ export default function RegisterPage() {
       className="space-y-6"
     >
       <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl gradient-bg mb-4 shadow-xl shadow-violet-600/30">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl gradient-bg mb-4 shadow-xl shadow-green-700/30">
           <span className="text-3xl">🎓</span>
         </div>
         <h1 className="text-3xl font-bold gradient-text">CampusHub</h1>
@@ -57,7 +57,7 @@ export default function RegisterPage() {
 
       <div className="card card-shadow p-6 space-y-5">
         <div>
-          <h2 className="text-xl font-bold text-white">Create account 🎉</h2>
+          <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">Create account 🎉</h2>
           <p className="text-[hsl(var(--foreground-muted))] text-sm mt-0.5">Use your college email address</p>
         </div>
 
@@ -66,7 +66,7 @@ export default function RegisterPage() {
             { icon: Mail, field: 'email', type: 'email', placeholder: 'you@college.edu', label: 'College Email' }]
             .map(({ icon: Icon, field, type, placeholder, label }) => (
             <div key={field} className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80">{label}</label>
+              <label className="text-sm font-medium text-[hsl(var(--foreground))]">{label}</label>
               <div className="relative">
                 <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--foreground-muted))]" />
                 <input type={type} value={form[field as keyof typeof form]}
@@ -77,14 +77,14 @@ export default function RegisterPage() {
           ))}
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-white/80">Password</label>
+            <label className="text-sm font-medium text-[hsl(var(--foreground))]">Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(var(--foreground-muted))]" />
               <input type={showPassword ? 'text' : 'password'} value={form.password}
                 onChange={(e) => set('password', e.target.value)}
                 placeholder="Min. 6 characters" className="input-base pl-10 pr-11" required />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[hsl(var(--foreground-muted))] hover:text-white transition-colors">
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] transition-colors">
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
@@ -95,7 +95,7 @@ export default function RegisterPage() {
               { icon: Phone, field: 'phone', placeholder: '9876500000', label: 'Phone' }]
               .map(({ icon: Icon, field, placeholder, label }) => (
               <div key={field} className="space-y-1.5">
-                <label className="text-xs font-medium text-white/70">{label} <span className="text-[hsl(var(--foreground-muted))]">(opt.)</span></label>
+                <label className="text-xs font-medium text-[hsl(var(--foreground))]">{label} <span className="text-[hsl(var(--foreground-muted))]">(opt.)</span></label>
                 <div className="relative">
                   <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[hsl(var(--foreground-muted))]" />
                   <input type="text" value={form[field as keyof typeof form]}
@@ -107,14 +107,14 @@ export default function RegisterPage() {
           </div>
 
           <button type="submit" disabled={isLoading}
-            className="w-full py-3.5 rounded-2xl gradient-bg text-white font-bold text-sm disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-xl shadow-violet-600/25 active:scale-[0.98]">
+            className="w-full py-3.5 rounded-2xl gradient-bg text-white font-bold text-sm disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-700/25 active:scale-[0.98]">
             {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Creating account…</> : 'Create account →'}
           </button>
         </form>
 
         <p className="text-center text-sm text-[hsl(var(--foreground-muted))]">
           Already have an account?{' '}
-          <Link href="/login" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
+          <Link href="/login" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--accent))] font-semibold transition-colors">
             Sign in
           </Link>
         </p>

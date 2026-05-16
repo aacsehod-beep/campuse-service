@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
+const Service = require('../models/Service');
 
 // @route   GET /api/users/:id
 exports.getUserProfile = async (req, res) => {
@@ -190,6 +191,20 @@ exports.unblockUser = async (req, res) => {
     res.json({ success: true, message: 'User unblocked' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to unblock user' });
+  }
+};
+
+// @route   GET /api/users/:id/public — public profile with services
+exports.getPublicProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select(
+      'name avatar rating totalRatings completedOrders hostel isAvailable createdAt'
+    );
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const services = await Service.find({ userId: req.params.id, isActive: true }).sort({ createdAt: -1 });
+    res.json({ success: true, user, services });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch public profile' });
   }
 };
 
