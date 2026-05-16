@@ -71,7 +71,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
-              leftIcon={<Ionicons name="mail-outline" size={18} color="rgba(255,255,255,0.4)" />}
+              leftIcon={<Ionicons name="mail-outline" size={18} color="#73897a" />}
             />
             <Input
               label="Password"
@@ -80,13 +80,13 @@ export default function LoginScreen() {
               placeholder="••••••••"
               secureTextEntry={!showPassword}
               autoComplete="password"
-              leftIcon={<Ionicons name="lock-closed-outline" size={18} color="rgba(255,255,255,0.4)" />}
+              leftIcon={<Ionicons name="lock-closed-outline" size={18} color="#73897a" />}
               rightIcon={
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={18}
-                    color="rgba(255,255,255,0.4)"
+                    color="#73897a"
                   />
                 </TouchableOpacity>
               }
@@ -117,7 +117,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#0d0d14' },
+  flex: { flex: 1, backgroundColor: '#f0faf4' },
   scroll: { flex: 1 },
   container: {
     flexGrow: 1,
@@ -130,21 +130,21 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 24,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#0c8a57',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#7c3aed',
+    shadowColor: '#0c8a57',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 10,
   },
   logoEmoji: { fontSize: 36 },
-  appName: { fontSize: 28, fontWeight: '800', color: '#a78bfa' },
-  appTagline: { fontSize: 14, color: 'rgba(255,255,255,0.45)' },
+  appName: { fontSize: 28, fontWeight: '800', color: '#0c8a57' },
+  appTagline: { fontSize: 14, color: '#73897a' },
   card: { gap: 20 },
-  title: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: -14 },
+  title: { fontSize: 22, fontWeight: '800', color: '#182a1e' },
+  subtitle: { fontSize: 13, color: '#73897a', marginTop: -14 },
   fields: { gap: 14 },
   loginBtn: { marginTop: 4 },
   registerRow: {
@@ -152,6 +152,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  registerText: { fontSize: 13, color: 'rgba(255,255,255,0.5)' },
-  registerLink: { fontSize: 13, color: '#a78bfa', fontWeight: '700' },
+  registerText: { fontSize: 13, color: '#73897a' },
+  registerLink: { fontSize: 13, color: '#0c8a57', fontWeight: '700' },
 });

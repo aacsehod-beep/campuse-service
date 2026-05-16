@@ -1,32 +1,18 @@
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import '../global.css';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
-import { useAuthStore } from '@/store/authStore';
 import { useSocket } from '@/hooks/useSocket';
 
 SplashScreen.preventAutoHideAsync();
 
-function AuthGuard() {
-  const { isAuthenticated } = useAuthStore();
-  const segments = useSegments();
-  const router = useRouter();
-
+function SocketInitializer() {
   useSocket();
-
-  useEffect(() => {
-    const inAuthGroup = segments[0] === '(auth)';
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)/feed');
-    }
-  }, [isAuthenticated, segments]);
-
   return null;
 }
 
@@ -43,8 +29,8 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={DarkTheme}>
-        <AuthGuard />
+      <ThemeProvider value={DefaultTheme}>
+        <SocketInitializer />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
@@ -53,8 +39,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               headerTitle: 'Order Details',
-              headerStyle: { backgroundColor: '#0d0d14' },
-              headerTintColor: '#ffffff',
+              headerStyle: { backgroundColor: '#f0faf4' },
+              headerTintColor: '#182a1e',
             }}
           />
           <Stack.Screen
@@ -62,8 +48,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               headerTitle: 'Wallet',
-              headerStyle: { backgroundColor: '#0d0d14' },
-              headerTintColor: '#ffffff',
+              headerStyle: { backgroundColor: '#f0faf4' },
+              headerTintColor: '#182a1e',
             }}
           />
           <Stack.Screen
@@ -71,8 +57,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               headerTitle: 'Notifications',
-              headerStyle: { backgroundColor: '#0d0d14' },
-              headerTintColor: '#ffffff',
+              headerStyle: { backgroundColor: '#f0faf4' },
+              headerTintColor: '#182a1e',
             }}
           />
           <Stack.Screen
@@ -80,8 +66,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               headerTitle: 'Provider Mode',
-              headerStyle: { backgroundColor: '#0d0d14' },
-              headerTintColor: '#ffffff',
+              headerStyle: { backgroundColor: '#f0faf4' },
+              headerTintColor: '#182a1e',
             }}
           />
         </Stack>

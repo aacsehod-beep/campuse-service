@@ -28,6 +28,12 @@ const CATEGORIES: { id: OrderCategory; label: string; emoji: string }[] = [
   { id: 'print', label: 'Prints', emoji: '🖨️' },
   { id: 'notes', label: 'Notes', emoji: '📝' },
   { id: 'ride', label: 'Ride', emoji: '🛵' },
+  { id: 'assessment', label: 'Assessment', emoji: '📋' },
+  { id: 'project', label: 'Project', emoji: '💻' },
+  { id: 'coaching', label: 'Coaching', emoji: '🎓' },
+  { id: 'design', label: 'Design', emoji: '🎨' },
+  { id: 'event', label: 'Event', emoji: '🎉' },
+  { id: 'marketplace', label: 'Marketplace', emoji: '🛒' },
   { id: 'others', label: 'Others', emoji: '📦' },
 ];
 
@@ -131,7 +137,7 @@ export default function CreateScreen() {
               value={form.description}
               onChangeText={(v) => update('description', v)}
               placeholder="Describe what you need in detail…"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#73897a"
               multiline
               numberOfLines={4}
               maxLength={500}
@@ -152,7 +158,7 @@ export default function CreateScreen() {
                 value={form.mode === 'bidding'}
                 onValueChange={(v) => update('mode', v ? 'bidding' : 'fixed')}
                 thumbColor="#fff"
-                trackColor={{ false: 'rgba(255,255,255,0.15)', true: '#7c3aed' }}
+                trackColor={{ false: '#d4e8da', true: '#0c8a57' }}
               />
             </View>
             {form.mode === 'fixed' && (
@@ -162,7 +168,7 @@ export default function CreateScreen() {
                 onChangeText={(v) => update('budget', v)}
                 placeholder="Enter amount"
                 keyboardType="numeric"
-                leftIcon={<Ionicons name="cash-outline" size={18} color="rgba(255,255,255,0.4)" />}
+                leftIcon={<Ionicons name="cash-outline" size={18} color="#73897a" />}
                 containerStyle={{ marginTop: 12 }}
               />
             )}
@@ -179,7 +185,7 @@ export default function CreateScreen() {
                 value={form.urgency === 'asap'}
                 onValueChange={(v) => update('urgency', v ? 'asap' : 'normal')}
                 thumbColor="#fff"
-                trackColor={{ false: 'rgba(255,255,255,0.15)', true: '#f97316' }}
+                trackColor={{ false: '#d4e8da', true: '#f97316' }}
               />
             </View>
           </Card>
@@ -189,10 +195,10 @@ export default function CreateScreen() {
             <Text style={styles.sectionLabel}>Location</Text>
             {address ? (
               <View style={styles.locationRow}>
-                <Ionicons name="location" size={16} color="#a78bfa" />
+                <Ionicons name="location" size={16} color="#0c8a57" />
                 <Text style={styles.locationText} numberOfLines={2}>{address}</Text>
                 <TouchableOpacity onPress={getLocation}>
-                  <Ionicons name="refresh-outline" size={16} color="rgba(255,255,255,0.4)" />
+                  <Ionicons name="refresh-outline" size={16} color="#73897a" />
                 </TouchableOpacity>
               </View>
             ) : (
@@ -222,14 +228,14 @@ export default function CreateScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0d0d14' },
+  safe: { flex: 1, backgroundColor: '#f0faf4' },
   flex: { flex: 1 },
   scroll: { flex: 1 },
   container: { padding: 16, gap: 14, paddingBottom: 40 },
-  heading: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  subheading: { fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: -8 },
+  heading: { fontSize: 22, fontWeight: '800', color: '#182a1e' },
+  subheading: { fontSize: 13, color: '#73897a', marginTop: -8 },
   section: { gap: 10 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#182a1e' },
   catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   catItem: {
     flexDirection: 'row',
@@ -238,29 +244,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 14,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#d4e8da',
   },
-  catItemActive: { backgroundColor: '#4c1d95', borderColor: '#7c3aed' },
+  catItemActive: { backgroundColor: '#e0f5ec', borderColor: '#0c8a57' },
   catEmoji: { fontSize: 18 },
-  catLabel: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.6)' },
-  catLabelActive: { color: '#fff' },
+  catLabel: { fontSize: 12, fontWeight: '600', color: '#73897a' },
+  catLabelActive: { color: '#0c8a57' },
   textarea: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#ffffff',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    color: '#fff',
+    borderColor: '#d4e8da',
+    color: '#182a1e',
     fontSize: 14,
     padding: 12,
     minHeight: 100,
   },
-  charCount: { fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'right' },
+  charCount: { fontSize: 11, color: '#73897a', textAlign: 'right' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rowInfo: { flex: 1, marginRight: 12 },
-  rowDesc: { fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
+  rowDesc: { fontSize: 11, color: '#73897a', marginTop: 2 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  locationText: { flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.7)' },
+  locationText: { flex: 1, fontSize: 13, color: '#182a1e' },
   submitBtn: { marginTop: 6 },
 });

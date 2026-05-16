@@ -85,7 +85,7 @@ export default function RegisterScreen() {
               onChangeText={(v) => update('name', v)}
               placeholder="Your name"
               autoCapitalize="words"
-              leftIcon={<Ionicons name="person-outline" size={18} color="rgba(255,255,255,0.4)" />}
+              leftIcon={<Ionicons name="person-outline" size={18} color="#73897a" />}
             />
             <Input
               label="College Email *"
@@ -94,7 +94,7 @@ export default function RegisterScreen() {
               placeholder="you@college.edu"
               keyboardType="email-address"
               autoCapitalize="none"
-              leftIcon={<Ionicons name="mail-outline" size={18} color="rgba(255,255,255,0.4)" />}
+              leftIcon={<Ionicons name="mail-outline" size={18} color="#73897a" />}
             />
             <Input
               label="Password *"
@@ -102,13 +102,13 @@ export default function RegisterScreen() {
               onChangeText={(v) => update('password', v)}
               placeholder="Min. 6 characters"
               secureTextEntry={!showPassword}
-              leftIcon={<Ionicons name="lock-closed-outline" size={18} color="rgba(255,255,255,0.4)" />}
+              leftIcon={<Ionicons name="lock-closed-outline" size={18} color="#73897a" />}
               rightIcon={
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={18}
-                    color="rgba(255,255,255,0.4)"
+                    color="#73897a"
                   />
                 </TouchableOpacity>
               }
@@ -118,7 +118,7 @@ export default function RegisterScreen() {
               value={form.hostel}
               onChangeText={(v) => update('hostel', v)}
               placeholder="e.g. Block A"
-              leftIcon={<Ionicons name="home-outline" size={18} color="rgba(255,255,255,0.4)" />}
+              leftIcon={<Ionicons name="home-outline" size={18} color="#73897a" />}
             />
             <Input
               label="Phone (optional)"
@@ -126,7 +126,7 @@ export default function RegisterScreen() {
               onChangeText={(v) => update('phone', v)}
               placeholder="+91 9XXXXXXXXX"
               keyboardType="phone-pad"
-              leftIcon={<Ionicons name="call-outline" size={18} color="rgba(255,255,255,0.4)" />}
+              leftIcon={<Ionicons name="call-outline" size={18} color="#73897a" />}
             />
           </View>
 
@@ -153,7 +153,7 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#0d0d14' },
+  flex: { flex: 1, backgroundColor: '#f0faf4' },
   scroll: { flex: 1 },
   container: {
     flexGrow: 1,
@@ -168,21 +168,21 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#0c8a57',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoEmoji: { fontSize: 32 },
-  appName: { fontSize: 24, fontWeight: '800', color: '#a78bfa' },
+  appName: { fontSize: 24, fontWeight: '800', color: '#0c8a57' },
   card: { gap: 18 },
-  title: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: -12 },
+  title: { fontSize: 22, fontWeight: '800', color: '#182a1e' },
+  subtitle: { fontSize: 13, color: '#73897a', marginTop: -12 },
   fields: { gap: 12 },
   loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loginText: { fontSize: 13, color: 'rgba(255,255,255,0.5)' },
-  loginLink: { fontSize: 13, color: '#a78bfa', fontWeight: '700' },
+  loginText: { fontSize: 13, color: '#73897a' },
+  loginLink: { fontSize: 13, color: '#0c8a57', fontWeight: '700' },
 });

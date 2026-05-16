@@ -1,14 +1,17 @@
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNotificationStore } from '@/store/notificationStore';
+import { useAuthStore } from '@/store/authStore';
 
-const TAB_COLOR = '#8b5cf6';
-const TAB_INACTIVE = '#6b7280';
-const BG = '#0d0d14';
+const TAB_COLOR = '#0c8a57';
+const TAB_INACTIVE = '#73897a';
+const BG = '#ffffff';
 
 export default function TabsLayout() {
   const { unreadCount } = useNotificationStore();
+  const { isAuthenticated } = useAuthStore();
+  if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
 
   return (
     <Tabs
@@ -83,7 +86,7 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: BG,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: '#d4e8da',
     height: 72,
     paddingBottom: 8,
     paddingTop: 8,
@@ -96,18 +99,18 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#0c8a57',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    shadowColor: '#7c3aed',
+    shadowColor: '#0c8a57',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
   fabActive: {
-    backgroundColor: '#6d28d9',
+    backgroundColor: '#097a4c',
   },
   badge: {
     position: 'absolute',
