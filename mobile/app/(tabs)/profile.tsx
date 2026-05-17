@@ -104,7 +104,7 @@ export default function ProfileScreen() {
               <Text style={styles.profileEmail}>{user.email}</Text>
               <View style={styles.ratingRow}>
                 <Text style={styles.stars}>{getRatingStars(user.rating)}</Text>
-                <Text style={styles.ratingText}>{user.rating.toFixed(1)}</Text>
+                <Text style={styles.ratingText}>{Number(user.rating ?? 0).toFixed(1)}</Text>
               </View>
             </View>
             <TouchableOpacity onPress={() => setEditing(!editing)} style={styles.editBtn}>
@@ -139,7 +139,7 @@ export default function ProfileScreen() {
           {/* Badges */}
           <View style={styles.badges}>
             <View style={styles.badge}>
-              <Text style={styles.badgeValue}>{user.rating.toFixed(1)} ⭐</Text>
+              <Text style={styles.badgeValue}>{Number(user.rating ?? 0).toFixed(1)} ⭐</Text>
               <Text style={styles.badgeLabel}>Rating</Text>
             </View>
             <View style={styles.badgeDivider} />
@@ -187,7 +187,7 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Earned</Text>
             </Card>
             <Card style={styles.statCard}>
-              <Text style={styles.statValue}>{user.rating.toFixed(1)}</Text>
+              <Text style={styles.statValue}>{Number(user.rating ?? 0).toFixed(1)}</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </Card>
           </View>

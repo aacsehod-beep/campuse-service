@@ -144,7 +144,7 @@ export default function ProviderScreen() {
         </Card>
         <Card style={styles.statCard}>
           <Ionicons name="star-outline" size={22} color="#fbbf24" />
-          <Text style={styles.statValue}>{user.rating.toFixed(1)}</Text>
+          <Text style={styles.statValue}>{Number(user.rating ?? 0).toFixed(1)}</Text>
           <Text style={styles.statLabel}>Rating</Text>
         </Card>
         <Card style={styles.statCard}>

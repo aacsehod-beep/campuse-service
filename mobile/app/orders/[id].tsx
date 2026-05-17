@@ -16,8 +16,8 @@ import * as Linking from 'expo-linking';
 import * as Location from 'expo-location';
 import { useOrderStore } from '@/store/orderStore';
 import { useAuthStore } from '@/store/authStore';
-import { messagesAPI, reviewsAPI } from '@/lib/api';
-import { Message, STATUS_META, CATEGORY_META } from '@/types';
+import { messagesAPI, reviewsAPI, bidsAPI } from '@/lib/api';
+import { Message, STATUS_META, CATEGORY_META, Bid } from '@/types';
 import { timeAgo, formatCurrency } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -44,6 +44,7 @@ export default function OrderDetailScreen() {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewDone, setReviewDone] = useState(false);
   const [countdown, setCountdown] = useState('');
+  const [myBidOverride, setMyBidOverride] = useState<Bid | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -71,6 +72,23 @@ export default function OrderDetailScreen() {
       socket?.off('new_bid');
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !user?._id) return;
+    bidsAPI
+      .getByOrder(id)
+      .then(({ data }) => {
+        const bids = (data?.bids || []) as Bid[];
+        const mine = bids.find((b) => {
+          const bidUserId = typeof b.userId === 'string' ? b.userId : b.userId?._id;
+          return bidUserId === user._id;
+        });
+        setMyBidOverride(mine || null);
+      })
+      .catch(() => {
+        setMyBidOverride(null);
+      });
+  }, [id, user?._id]);
 
   // Bid countdown — tick every second from order creation
   useEffect(() => {
@@ -157,10 +175,12 @@ export default function OrderDetailScreen() {
     }
     setBidSubmitting(true);
     try {
-      await placeBid(id, {
+      const createdBid = await placeBid(id, {
         price: parseFloat(bidPrice),
         message: bidMessage || undefined,
       });
+      setMyBidOverride(createdBid as Bid);
+      fetchOrderById(id);
       setBidSuccess(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: unknown) {
@@ -216,6 +236,11 @@ export default function OrderDetailScreen() {
   const isProvider = user?._id === order.assignedTo?._id;
   const statusMeta = STATUS_META[order.status];
   const catMeta = CATEGORY_META[order.category];
+  const myBidFromOrder = (order.bids || []).find((b) => {
+    const bidUserId = typeof b.userId === 'string' ? b.userId : b.userId?._id;
+    return bidUserId === user?._id;
+  });
+  const myBid = myBidFromOrder || myBidOverride;
 
   const STATUS_STEPS = ['CREATED', 'BROADCASTED', 'ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
 
@@ -285,7 +310,7 @@ export default function OrderDetailScreen() {
             <Text style={styles.partyRole}>Provider</Text>
             <Avatar name={order.assignedTo.name} size={40} online />
             <Text style={styles.partyName}>{order.assignedTo.name}</Text>
-            <Text style={styles.partyMeta}>⭐ {order.assignedTo.rating.toFixed(1)}</Text>
+            <Text style={styles.partyMeta}>⭐ {Number(order.assignedTo.rating ?? 0).toFixed(1)}</Text>
           </Card>
         )}
       </View>
@@ -398,8 +423,20 @@ export default function OrderDetailScreen() {
       {/* Bid section */}
       {order.mode === 'bidding' && ['CREATED', 'BROADCASTED'].includes(order.status) && !isOwner && (
         <Card shadow>
-          <Text style={styles.sectionTitle}>Place Your Bid</Text>
-          {bidSuccess ? (
+          <Text style={styles.sectionTitle}>{myBid ? 'Your Bid' : 'Place Your Bid'}</Text>
+          {myBid ? (
+            <View style={styles.myBidWrap}>
+              <Text style={styles.myBidAmount}>{formatCurrency(myBid.price)}</Text>
+              <Text style={styles.myBidStatus}>
+                {myBid.status === 'accepted'
+                  ? 'Accepted by customer'
+                  : myBid.status === 'rejected'
+                    ? 'Rejected by customer'
+                    : 'Bid submitted. Waiting for customer update.'}
+              </Text>
+              {!!myBid.message && <Text style={styles.myBidMsg}>“{myBid.message}”</Text>}
+            </View>
+          ) : bidSuccess ? (
             <View style={styles.bidSuccess}>
               <Text style={styles.bidSuccessEmoji}>🎉</Text>
               <Text style={styles.bidSuccessText}>Bid placed! Waiting for acceptance.</Text>
@@ -588,6 +625,17 @@ const styles = StyleSheet.create({
   bidSuccess: { alignItems: 'center', gap: 6, padding: 10 },
   bidSuccessEmoji: { fontSize: 32 },
   bidSuccessText: { fontSize: 13, color: '#16a34a', fontWeight: '600' },
+  myBidWrap: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#d4e8da',
+    backgroundColor: '#f8fdf9',
+    padding: 12,
+    gap: 4,
+  },
+  myBidAmount: { fontSize: 20, fontWeight: '800', color: '#0c8a57' },
+  myBidStatus: { fontSize: 13, fontWeight: '600', color: '#3a6d4f' },
+  myBidMsg: { fontSize: 12, color: '#73897a' },
   chatMessages: { gap: 6, maxHeight: 200, overflow: 'scroll' },
   msgRow: { flexDirection: 'row' },
   msgRowMe: { justifyContent: 'flex-end' },
