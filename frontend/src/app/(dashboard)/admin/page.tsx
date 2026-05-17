@@ -43,7 +43,7 @@ export default function AdminPage() {
     { label: 'Total Users', value: users.length, icon: <Users className="w-5 h-5 text-blue-400" />, bg: 'bg-blue-500/10' },
     { label: 'Total Orders', value: orders.length, icon: <Package className="w-5 h-5 text-violet-400" />, bg: 'bg-violet-500/10' },
     { label: 'Active Orders', value: orders.filter((o) => !['COMPLETED', 'CANCELLED'].includes(o.status)).length, icon: <CheckCircle2 className="w-5 h-5 text-green-400" />, bg: 'bg-green-500/10' },
-    { label: 'Banned Users', value: users.filter((u) => u.isBanned).length, icon: <Ban className="w-5 h-5 text-red-400" />, bg: 'bg-red-500/10' },
+    { label: 'Banned Users', value: users.filter((u) => (u as User & { isBanned?: boolean }).isBanned).length, icon: <Ban className="w-5 h-5 text-red-400" />, bg: 'bg-red-500/10' },
   ];
 
   return (
@@ -115,7 +115,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2">
                           <UserAvatar
                             name={u.name}
-                            avatar={u.avatar}
+                            avatar={u.avatar ?? undefined}
                             size={32}
                             className="rounded-lg"
                           />

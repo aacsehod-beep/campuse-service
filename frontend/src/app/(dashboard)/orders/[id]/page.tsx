@@ -44,7 +44,7 @@ export default function OrderDetailPage() {
   }
 
   const orderUser = typeof order.userId === 'string' ? null : order.userId as import('@/types').User;
-  const isOwner = orderUser?._id === user?._id || order.userId === user?._id;
+  const isOwner = orderUser?._id === user?._id || (typeof order.userId === 'string' && order.userId === user?._id);
   const isProvider = typeof order.assignedTo !== 'string' && order.assignedTo?._id === user?._id;
   const meta = CATEGORY_META[order.category];
   const statusMeta = STATUS_META[order.status];
@@ -124,7 +124,7 @@ export default function OrderDetailPage() {
             <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
               <UserAvatar
                 name={orderUser.name}
-                avatar={orderUser.avatar}
+                avatar={orderUser.avatar ?? undefined}
                 size={42}
                 className="ring-2 ring-[hsl(var(--border))] shrink-0"
               />
@@ -147,7 +147,7 @@ export default function OrderDetailPage() {
               <div className="relative shrink-0">
                 <UserAvatar
                   name={order.assignedTo.name}
-                  avatar={order.assignedTo.avatar}
+                  avatar={order.assignedTo.avatar ?? undefined}
                   size={42}
                   className="ring-2 ring-[hsl(var(--primary))]/30"
                 />

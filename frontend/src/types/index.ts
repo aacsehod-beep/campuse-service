@@ -40,6 +40,7 @@ export interface User {
   location?: Location;
   createdAt: string;
   blockedUsers?: string[];
+  isBanned?: boolean;
 }
 
 export interface Order {

@@ -118,7 +118,7 @@ export default function ChatPanel({ orderId, orderStatus }: Props) {
               <div key={msg._id} className={cn('flex items-end gap-2', isMe && 'flex-row-reverse')}>
                 <UserAvatar
                   name={senderName}
-                  avatar={msg.senderId?.avatar}
+                  avatar={msg.senderId?.avatar ?? undefined}
                   size={28}
                 />
                 <div className={cn('max-w-[70%] space-y-0.5', isMe && 'items-end')}>

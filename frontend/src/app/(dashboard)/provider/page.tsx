@@ -29,7 +29,7 @@ export default function ProviderPage() {
         params.lng = coords[0];
         params.radius = 3000;
       }
-      const { data } = await ordersAPI.getAll(params);
+      const { data } = await ordersAPI.getAll(params as Record<string, string | number>);
       setNearbyOrders(data.orders || []);
     } catch {
       // fallback: fetch without location
