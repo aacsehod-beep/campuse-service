@@ -42,8 +42,8 @@ exports.getOrders = async (req, res) => {
     let total;
     try {
       orders = await Order.find(filter)
-        .populate('userId', 'name avatar rating completedOrders hostel')
-        .populate('assignedTo', 'name avatar rating')
+        .populate('userId', 'name avatar rating completedOrders hostel isVerified totalRatings reliabilityScore')
+        .populate('assignedTo', 'name avatar rating isVerified totalRatings reliabilityScore')
         .sort({ isPriorityBoosted: -1, createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit));
@@ -52,8 +52,8 @@ exports.getOrders = async (req, res) => {
       // Geo query failed — retry without location filter
       delete filter.location;
       orders = await Order.find(filter)
-        .populate('userId', 'name avatar rating completedOrders hostel')
-        .populate('assignedTo', 'name avatar rating')
+        .populate('userId', 'name avatar rating completedOrders hostel isVerified totalRatings reliabilityScore')
+        .populate('assignedTo', 'name avatar rating isVerified totalRatings reliabilityScore')
         .sort({ isPriorityBoosted: -1, createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit));
@@ -80,11 +80,11 @@ exports.getOrders = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate('userId', 'name avatar rating completedOrders hostel phone')
-      .populate('assignedTo', 'name avatar rating completedOrders hostel phone isAvailable')
+      .populate('userId', 'name avatar rating completedOrders hostel phone isAvailable isVerified totalRatings reliabilityScore')
+      .populate('assignedTo', 'name avatar rating completedOrders hostel phone isAvailable isVerified totalRatings reliabilityScore')
       .populate({
         path: 'bids',
-        populate: { path: 'userId', select: 'name avatar rating completedOrders reliabilityScore' },
+        populate: { path: 'userId', select: 'name avatar rating completedOrders reliabilityScore totalRatings isVerified' },
       });
 
     if (!order) {
@@ -245,7 +245,7 @@ exports.acceptOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    if (order.mode !== 'fixed') {
+    if (!['fixed', 'instant'].includes(order.mode)) {
       return res.status(400).json({ success: false, message: 'This order requires bidding' });
     }
 
@@ -259,7 +259,7 @@ exports.acceptOrder = async (req, res) => {
 
     order.assignedTo = req.user._id;
     order.status = 'ACCEPTED';
-    order.finalPrice = order.budget;
+    order.finalPrice = order.budget || order.finalPrice;
     order.statusHistory.push({ status: 'ACCEPTED', note: `Accepted by ${req.user.name}` });
     await order.save();
 
@@ -303,8 +303,8 @@ exports.getMyOrders = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const orders = await Order.find(filter)
-      .populate('userId', 'name avatar rating hostel')
-      .populate('assignedTo', 'name avatar rating hostel')
+      .populate('userId', 'name avatar rating hostel isVerified totalRatings reliabilityScore')
+      .populate('assignedTo', 'name avatar rating hostel isVerified totalRatings reliabilityScore')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));

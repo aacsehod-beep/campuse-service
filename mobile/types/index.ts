@@ -8,7 +8,7 @@ export type OrderStatus =
   | 'DELIVERED'
   | 'COMPLETED'
   | 'CANCELLED';
-export type OrderMode = 'fixed' | 'bidding';
+export type OrderMode = 'fixed' | 'bidding' | 'instant';
 export type OrderUrgency = 'normal' | 'asap';
 
 export interface Location {
@@ -25,6 +25,7 @@ export interface User {
   hostel?: string;
   phone?: string;
   role: 'student' | 'admin';
+  isVerified?: boolean;
   isAvailable: boolean;
   rating: number;
   totalRatings: number;

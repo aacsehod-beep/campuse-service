@@ -24,7 +24,7 @@ const orderSchema = new mongoose.Schema(
     },
     mode: {
       type: String,
-      enum: ['fixed', 'bidding'],
+      enum: ['fixed', 'bidding', 'instant'],
       required: [true, 'Mode is required'],
     },
     status: {

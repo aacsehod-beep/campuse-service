@@ -44,6 +44,7 @@ export default function OrderDetailScreen() {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewDone, setReviewDone] = useState(false);
   const [countdown, setCountdown] = useState('');
+  const [deliveryProof, setDeliveryProof] = useState('');
   const [myBidOverride, setMyBidOverride] = useState<Bid | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -130,6 +131,25 @@ export default function OrderDetailScreen() {
     Linking.openURL(url);
   };
 
+  const handleEmergencyHelp = () => {
+    Alert.alert(
+      'Emergency Assistance',
+      'Call emergency support now?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Call 112',
+          style: 'destructive',
+          onPress: () => {
+            Linking.openURL('tel:112').catch(() => {
+              Toast.show({ type: 'error', text1: 'Unable to open dialer' });
+            });
+          },
+        },
+      ]
+    );
+  };
+
   const loadMessages = async (orderId: string) => {
     try {
       const { data } = await messagesAPI.getMessages(orderId);
@@ -205,6 +225,19 @@ export default function OrderDetailScreen() {
     }
   };
 
+  const handleMarkDelivered = async () => {
+    if (!id) return;
+    const note = deliveryProof.trim() ? `Proof: ${deliveryProof.trim()}` : undefined;
+    try {
+      await updateOrderStatus(id, 'DELIVERED', note);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Toast.show({ type: 'success', text1: 'Marked as delivered' });
+      setDeliveryProof('');
+    } catch {
+      Toast.show({ type: 'error', text1: 'Failed to mark delivered' });
+    }
+  };
+
   const handleReview = async () => {
     if (!activeOrder) return;
     const toUser = user?._id === activeOrder.userId._id
@@ -249,6 +282,44 @@ export default function OrderDetailScreen() {
   const myBid = myBidFromOrder || myBidOverride;
   const isAssignedElsewhere = !!order.assignedTo && !isOwner && !isProvider;
   const isMyBidRejected = myBid?.status === 'rejected';
+  const acceptedBid = (order.bids || []).find((bid) => bid.status === 'accepted') || null;
+  const etaMins = acceptedBid?.estimatedTime;
+  const etaBaseline = order.statusHistory.find((h) => h.status === 'BID_SELECTED')
+    || order.statusHistory.find((h) => h.status === 'ACCEPTED');
+  let etaLabel = '';
+  if (etaMins && etaBaseline && ['ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS'].includes(order.status)) {
+    const dueAt = new Date(etaBaseline.timestamp).getTime() + etaMins * 60000;
+    const left = dueAt - Date.now();
+    etaLabel = left > 0
+      ? `ETA ${Math.max(1, Math.ceil(left / 60000))} min`
+      : 'ETA window reached';
+  }
+  const rankedBids = (order.bids || [])
+    .map((bid) => {
+      const priceScore = bid.price > 0 ? 1000 / bid.price : 0;
+      const ratingScore = (bid.userId?.rating || 0) * 18;
+      const reliabilityScore = (bid.userId?.reliabilityScore || 0) * 0.45;
+      const etaScore = bid.estimatedTime ? Math.max(0, 90 - bid.estimatedTime) : 20;
+      const score = priceScore + ratingScore + reliabilityScore + etaScore;
+      return { bid, score };
+    })
+    .sort((a, b) => b.score - a.score);
+  const cheapestBidId = rankedBids.reduce<string | null>((best, entry) => {
+    if (!best) return entry.bid._id;
+    const currentBest = rankedBids.find((x) => x.bid._id === best)?.bid.price ?? Number.MAX_SAFE_INTEGER;
+    return entry.bid.price < currentBest ? entry.bid._id : best;
+  }, null);
+  const fastestBidId = rankedBids.reduce<string | null>((best, entry) => {
+    if (!entry.bid.estimatedTime) return best;
+    if (!best) return entry.bid._id;
+    const currentBest = rankedBids.find((x) => x.bid._id === best)?.bid.estimatedTime ?? Number.MAX_SAFE_INTEGER;
+    return (entry.bid.estimatedTime || Number.MAX_SAFE_INTEGER) < currentBest ? entry.bid._id : best;
+  }, null);
+  const topRatedBidId = rankedBids.reduce<string | null>((best, entry) => {
+    if (!best) return entry.bid._id;
+    const currentBest = rankedBids.find((x) => x.bid._id === best)?.bid.userId?.rating ?? -1;
+    return (entry.bid.userId?.rating || 0) > currentBest ? entry.bid._id : best;
+  }, null);
 
   const STATUS_STEPS = ['CREATED', 'BROADCASTED', 'ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
 
@@ -267,7 +338,7 @@ export default function OrderDetailScreen() {
                 <Badge label="⚡ ASAP" color="#fb923c" bg="rgba(249,115,22,0.12)" />
               )}
               <Badge
-                label={order.mode === 'bidding' ? '🔖 Bidding' : '💰 Fixed'}
+                label={order.mode === 'bidding' ? '🔖 Bidding' : order.mode === 'instant' ? '⚡ Instant' : '💰 Fixed'}
                 color="#60a5fa"
                 bg="rgba(59,130,246,0.12)"
               />
@@ -319,12 +390,60 @@ export default function OrderDetailScreen() {
         </Card>
       )}
 
+      {etaMins && ['ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS'].includes(order.status) && (
+        <Card shadow style={styles.etaCard}>
+          <View style={styles.etaHead}>
+            <View style={styles.etaIconWrap}>
+              <Ionicons name="navigate-circle-outline" size={18} color="#0c8a57" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.etaTitle}>Live tracker</Text>
+              <Text style={styles.etaSub}>{etaLabel || `Estimated completion ${etaMins} min`}</Text>
+            </View>
+          </View>
+          <View style={styles.etaSteps}>
+            {['Accepted', 'On the way', 'In progress', 'Delivered'].map((label, idx) => {
+              const activeStep =
+                order.status === 'ACCEPTED' || order.status === 'BID_SELECTED' ? 1 :
+                order.status === 'IN_PROGRESS' ? 2 :
+                order.status === 'DELIVERED' || order.status === 'COMPLETED' ? 3 : 0;
+              const done = idx <= activeStep;
+              return (
+                <View key={label} style={styles.etaStepItem}>
+                  <View style={[styles.etaDot, done && styles.etaDotDone]} />
+                  <Text style={[styles.etaStepText, done && styles.etaStepTextDone]}>{label}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </Card>
+      )}
+
+      {(isOwner || isProvider) && ['ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS'].includes(order.status) && (
+        <Card shadow style={styles.sosCard}>
+          <View style={styles.sosTextWrap}>
+            <Text style={styles.sosTitle}>Safety Help</Text>
+            <Text style={styles.sosSub}>If you feel unsafe during this order, call emergency support immediately.</Text>
+          </View>
+          <TouchableOpacity onPress={handleEmergencyHelp} style={styles.sosBtn}>
+            <Ionicons name="warning-outline" size={16} color="#fff" />
+            <Text style={styles.sosBtnText}>SOS</Text>
+          </TouchableOpacity>
+        </Card>
+      )}
+
       {/* Parties */}
       <View style={styles.row2}>
         <Card style={styles.partyCard}>
           <Text style={styles.partyRole}>Customer</Text>
           <Avatar name={order.userId.name} size={40} />
           <Text style={styles.partyName}>{order.userId.name}</Text>
+          <View style={styles.trustRow}>
+            {(order.userId.isVerified || (order.userId.totalRatings || 0) >= 5) && (
+              <Text style={styles.trustChip}>Verified</Text>
+            )}
+            {(order.userId.reliabilityScore || 0) >= 90 && <Text style={styles.trustChip}>Trusted</Text>}
+          </View>
           {order.userId.hostel && (
             <Text style={styles.partyMeta}>{order.userId.hostel}</Text>
           )}
@@ -334,6 +453,12 @@ export default function OrderDetailScreen() {
             <Text style={styles.partyRole}>Provider</Text>
             <Avatar name={order.assignedTo.name} size={40} online />
             <Text style={styles.partyName}>{order.assignedTo.name}</Text>
+            <View style={styles.trustRow}>
+              {(order.assignedTo.isVerified || (order.assignedTo.totalRatings || 0) >= 5) && (
+                <Text style={styles.trustChip}>Verified</Text>
+              )}
+              {(order.assignedTo.reliabilityScore || 0) >= 90 && <Text style={styles.trustChip}>Trusted</Text>}
+            </View>
             <Text style={styles.partyMeta}>⭐ {Number(order.assignedTo.rating ?? 0).toFixed(1)}</Text>
           </Card>
         )}
@@ -378,6 +503,9 @@ export default function OrderDetailScreen() {
                 </Text>
                 {hist && (
                   <Text style={styles.timelineTime}>{timeAgo(hist.timestamp)}</Text>
+                )}
+                {!!hist?.note && step === 'DELIVERED' && (
+                  <Text style={styles.timelineNote}>{hist.note}</Text>
                 )}
               </View>
             </View>
@@ -427,15 +555,26 @@ export default function OrderDetailScreen() {
         />
       )}
       {isProvider && order.status === 'IN_PROGRESS' && (
-        <Button
-          title="📦 Mark Delivered"
-          onPress={() => handleStatusUpdate('DELIVERED')}
-          fullWidth
-          size="lg"
-        />
+        <Card shadow>
+          <Text style={styles.sectionTitle}>Proof of delivery</Text>
+          <TextInput
+            value={deliveryProof}
+            onChangeText={setDeliveryProof}
+            placeholder="Add proof note or link (optional)"
+            placeholderTextColor="#73897a"
+            style={styles.bidInput}
+          />
+          <Button
+            title="📦 Mark Delivered"
+            onPress={handleMarkDelivered}
+            fullWidth
+            size="lg"
+            style={{ marginTop: 10 }}
+          />
+        </Card>
       )}
       {/* Accept fixed-price order */}
-      {!isOwner && order.mode === 'fixed' && ['CREATED', 'BROADCASTED'].includes(order.status) && !order.assignedTo && (
+      {!isOwner && ['fixed', 'instant'].includes(order.mode) && ['CREATED', 'BROADCASTED'].includes(order.status) && !order.assignedTo && (
         <Button
           title="Accept This Order"
           onPress={handleAcceptOrder}
@@ -497,13 +636,30 @@ export default function OrderDetailScreen() {
       {/* Bids list (owner view) */}
       {isOwner && order.mode === 'bidding' && (order.bids?.length ?? 0) > 0 && (
         <Card shadow>
-          <Text style={styles.sectionTitle}>Bids ({order.bids!.length})</Text>
-          {order.bids!.map((bid) => (
+          <View style={styles.bidSectionHead}>
+            <Text style={styles.sectionTitle}>Bids ({order.bids!.length})</Text>
+            <Text style={styles.bidHint}>Ranked for value, speed and trust</Text>
+          </View>
+          {rankedBids.map(({ bid }, index) => (
             <View key={bid._id} style={styles.bidCard}>
               <Avatar name={bid.userId.name} size={36} />
               <View style={styles.bidInfo}>
-                <Text style={styles.bidName}>{bid.userId.name}</Text>
+                <View style={styles.bidTopRow}>
+                  <Text style={styles.bidName}>{bid.userId.name}</Text>
+                  {index === 0 && <Text style={styles.rankChip}>Recommended</Text>}
+                </View>
                 <Text style={styles.bidPrice}>{formatCurrency(bid.price)}</Text>
+                <View style={styles.bidMetaRow}>
+                  <Text style={styles.bidMetaPill}>⭐ {Number(bid.userId?.rating ?? 0).toFixed(1)}</Text>
+                  <Text style={styles.bidMetaPill}>Trust {bid.userId?.reliabilityScore ?? 0}%</Text>
+                  {(bid.userId?.isVerified || (bid.userId?.totalRatings || 0) >= 5) && <Text style={styles.bidMetaPill}>Verified</Text>}
+                  {!!bid.estimatedTime && <Text style={styles.bidMetaPill}>{bid.estimatedTime} min</Text>}
+                </View>
+                <View style={styles.bidTagRow}>
+                  {bid._id === cheapestBidId && <Text style={styles.bidTag}>Best Value</Text>}
+                  {bid._id === fastestBidId && <Text style={styles.bidTag}>Fastest</Text>}
+                  {bid._id === topRatedBidId && <Text style={styles.bidTag}>Top Rated</Text>}
+                </View>
                 {bid.message && (
                   <Text style={styles.bidMsg}>{bid.message}</Text>
                 )}
@@ -649,10 +805,61 @@ const styles = StyleSheet.create({
   unavailableTextWrap: { flex: 1, gap: 4 },
   unavailableTitle: { fontSize: 13, fontWeight: '700', color: '#9a3412' },
   unavailableText: { fontSize: 12, lineHeight: 18, color: '#7c2d12' },
+  etaCard: { gap: 10 },
+  etaHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  etaIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    backgroundColor: '#e8f7ef',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  etaTitle: { fontSize: 13, fontWeight: '800', color: '#182a1e' },
+  etaSub: { fontSize: 12, color: '#537565' },
+  etaSteps: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  etaStepItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  etaDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#d4e8da' },
+  etaDotDone: { backgroundColor: '#0c8a57' },
+  etaStepText: { fontSize: 11, color: '#73897a', fontWeight: '600' },
+  etaStepTextDone: { color: '#1f5137' },
+  sosCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderColor: '#fde7d3',
+    borderWidth: 1,
+    backgroundColor: '#fffaf5',
+  },
+  sosTextWrap: { flex: 1, gap: 3 },
+  sosTitle: { fontSize: 13, fontWeight: '800', color: '#9a3412' },
+  sosSub: { fontSize: 11, color: '#7c2d12', lineHeight: 17 },
+  sosBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#dc2626',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  sosBtnText: { fontSize: 12, fontWeight: '800', color: '#fff' },
   row2: { flexDirection: 'row', gap: 10 },
   partyCard: { flex: 1, alignItems: 'center', gap: 6, padding: 14 },
   partyRole: { fontSize: 10, fontWeight: '700', color: '#73897a', textTransform: 'uppercase' },
   partyName: { fontSize: 13, fontWeight: '700', color: '#182a1e' },
+  trustRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap', justifyContent: 'center' },
+  trustChip: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#0f5f3b',
+    backgroundColor: '#e8f7ef',
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    overflow: 'hidden',
+    textTransform: 'uppercase',
+  },
   partyMeta: { fontSize: 11, color: '#73897a' },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: '#182a1e', marginBottom: 10 },
   timelineItem: { flexDirection: 'row', gap: 8, minHeight: 36 },
@@ -672,10 +879,46 @@ const styles = StyleSheet.create({
   timelineLabel: { fontSize: 12, color: '#73897a', fontWeight: '600' },
   timelineLabelDone: { color: '#182a1e' },
   timelineTime: { fontSize: 10, color: '#73897a' },
+  timelineNote: { fontSize: 11, color: '#537565', marginTop: 2 },
   bidCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#d4e8da' },
   bidInfo: { flex: 1 },
+  bidSectionHead: { marginBottom: 4 },
+  bidHint: { marginTop: -6, marginBottom: 10, fontSize: 11, color: '#73897a' },
+  bidTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   bidName: { fontSize: 13, fontWeight: '700', color: '#182a1e' },
+  rankChip: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0c8a57',
+    backgroundColor: '#e8f7ef',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    overflow: 'hidden',
+  },
   bidPrice: { fontSize: 15, fontWeight: '800', color: '#0c8a57' },
+  bidMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  bidMetaPill: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#537565',
+    backgroundColor: '#f3faf5',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    overflow: 'hidden',
+  },
+  bidTagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  bidTag: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#9a3412',
+    backgroundColor: '#ffedd5',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    overflow: 'hidden',
+  },
   bidMsg: { fontSize: 12, color: '#73897a' },
   bidInput: {
     backgroundColor: '#ffffff',

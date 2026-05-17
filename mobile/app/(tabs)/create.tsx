@@ -45,7 +45,7 @@ export default function CreateScreen() {
   const [form, setForm] = useState({
     category: '' as OrderCategory | '',
     description: '',
-    mode: 'fixed' as 'fixed' | 'bidding',
+    mode: 'fixed' as 'fixed' | 'bidding' | 'instant',
     budget: '',
     urgency: 'normal' as 'normal' | 'asap',
   });
@@ -198,6 +198,14 @@ export default function CreateScreen() {
                   Open Bidding
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modeBtn, form.mode === 'instant' && styles.modeBtnActive]}
+                onPress={() => update('mode', 'instant')}
+              >
+                <Text style={[styles.modeBtnText, form.mode === 'instant' && styles.modeBtnTextActive]}>
+                  Instant Match
+                </Text>
+              </TouchableOpacity>
             </View>
             {form.mode === 'fixed' && (
               <>
@@ -225,6 +233,14 @@ export default function CreateScreen() {
                   containerStyle={{ marginTop: 4 }}
                 />
               </>
+            )}
+            {form.mode === 'instant' && (
+              <View style={styles.instantInfoWrap}>
+                <Ionicons name="flash-outline" size={14} color="#16a34a" />
+                <Text style={styles.instantInfoText}>
+                  Instant Match notifies nearby providers and the first available provider can accept.
+                </Text>
+              </View>
             )}
           </Card>
 
@@ -396,6 +412,18 @@ const styles = StyleSheet.create({
   },
   modeBtnText: { fontSize: 13, fontWeight: '700', color: '#73897a' },
   modeBtnTextActive: { color: '#ffffff' },
+  instantInfoWrap: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: '#eefcf3',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccebd7',
+    padding: 10,
+  },
+  instantInfoText: { flex: 1, fontSize: 12, lineHeight: 17, color: '#2f6a4a' },
 
   // Budget presets
   presetsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
