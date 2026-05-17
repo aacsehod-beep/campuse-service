@@ -99,7 +99,7 @@ export default function MyOrdersScreen() {
       <View style={styles.summaryStrip}>
         <TouchableOpacity
           style={[styles.summaryItem, tab === 'active' && styles.summaryItemActive]}
-          onPress={() => { setTab('active'); if (Platform.OS !== 'web') Haptics.selectionAsync(); }}}
+          onPress={() => { setTab('active'); if (Platform.OS !== 'web') Haptics.selectionAsync(); }}
         >
           <Ionicons name="time-outline" size={14} color={tab === 'active' ? '#0c8a57' : '#3b82f6'} />
           <Text style={[styles.summaryValue, { color: tab === 'active' ? '#0c8a57' : '#3b82f6' }]}>{activeCount}</Text>
@@ -108,7 +108,7 @@ export default function MyOrdersScreen() {
         <View style={styles.statDivider} />
         <TouchableOpacity
           style={[styles.summaryItem, tab === 'completed' && styles.summaryItemActive]}
-          onPress={() => { setTab('completed'); if (Platform.OS !== 'web') Haptics.selectionAsync(); }}}
+          onPress={() => { setTab('completed'); if (Platform.OS !== 'web') Haptics.selectionAsync(); }}
         >
           <Ionicons name="checkmark-circle-outline" size={14} color={tab === 'completed' ? '#0c8a57' : '#0c8a57'} />
           <Text style={[styles.summaryValue, { color: '#0c8a57' }]}>{doneCount}</Text>
