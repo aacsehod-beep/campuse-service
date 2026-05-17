@@ -19,19 +19,19 @@ import { ordersAPI } from '@/lib/api';
 import { OrderCategory, Order } from '@/types';
 import { RequestCard } from '@/components/orders/RequestCard';
 
-const CATEGORIES: { id: OrderCategory | ''; label: string; emoji: string }[] = [
-  { id: '', label: 'All', emoji: '✨' },
-  { id: 'food', label: 'Food', emoji: '🍕' },
-  { id: 'print', label: 'Prints', emoji: '🖨️' },
-  { id: 'notes', label: 'Notes', emoji: '📝' },
-  { id: 'ride', label: 'Ride', emoji: '🛵' },
-  { id: 'assessment', label: 'Assessment', emoji: '📋' },
-  { id: 'project', label: 'Project', emoji: '💻' },
-  { id: 'coaching', label: 'Coaching', emoji: '🎓' },
-  { id: 'design', label: 'Design', emoji: '🎨' },
-  { id: 'event', label: 'Event', emoji: '🎉' },
-  { id: 'marketplace', label: 'Marketplace', emoji: '🛒' },
-  { id: 'others', label: 'Others', emoji: '📦' },
+const CATEGORIES: { id: OrderCategory | ''; label: string; icon: string }[] = [
+  { id: '', label: 'All', icon: 'apps-outline' },
+  { id: 'food', label: 'Food', icon: 'fast-food-outline' },
+  { id: 'print', label: 'Prints', icon: 'print-outline' },
+  { id: 'notes', label: 'Notes', icon: 'document-text-outline' },
+  { id: 'ride', label: 'Ride', icon: 'bicycle-outline' },
+  { id: 'assessment', label: 'Assessment', icon: 'clipboard-outline' },
+  { id: 'project', label: 'Project', icon: 'laptop-outline' },
+  { id: 'coaching', label: 'Coaching', icon: 'school-outline' },
+  { id: 'design', label: 'Design', icon: 'color-palette-outline' },
+  { id: 'event', label: 'Event', icon: 'calendar-outline' },
+  { id: 'marketplace', label: 'Marketplace', icon: 'cart-outline' },
+  { id: 'others', label: 'Others', icon: 'cube-outline' },
 ];
 
 export default function FeedScreen() {
@@ -131,13 +131,17 @@ export default function FeedScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categories}
         >
-          {CATEGORIES.map(({ id, label, emoji }) => (
+          {CATEGORIES.map(({ id, label, icon }) => (
             <TouchableOpacity
               key={id}
               onPress={() => { setFilters({ category: id || undefined }); fetchOrders(true); }}
               style={[styles.pill, activeCategory === id && styles.pillActive]}
             >
-              <Text style={styles.pillEmoji}>{emoji}</Text>
+              <Ionicons
+                name={icon as any}
+                size={13}
+                color={activeCategory === id ? '#fff' : '#73897a'}
+              />
               <Text style={[styles.pillLabel, activeCategory === id && styles.pillLabelActive]}>
                 {label}
               </Text>
@@ -187,7 +191,7 @@ export default function FeedScreen() {
                     <View style={styles.actionIconGreen}>
                       <Ionicons name="add" size={18} color="#fff" />
                     </View>
-                    <View>
+                    <View style={styles.actionTextWrap}>
                       <Text style={styles.actionTitle}>Post Request</Text>
                       <Text style={styles.actionSub}>Need something?</Text>
                     </View>
@@ -196,7 +200,7 @@ export default function FeedScreen() {
                     <View style={styles.actionIconMint}>
                       <Ionicons name="flash-outline" size={18} color="#16a34a" />
                     </View>
-                    <View>
+                    <View style={styles.actionTextWrap}>
                       <Text style={styles.actionTitle}>Go Online</Text>
                       <Text style={styles.actionSub}>Earn on campus</Text>
                     </View>
@@ -248,7 +252,9 @@ export default function FeedScreen() {
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>📭</Text>
+              <View style={styles.emptyIconWrap}>
+                <Ionicons name="mail-open-outline" size={40} color="#d4e8da" />
+              </View>
               <Text style={styles.emptyTitle}>No requests yet</Text>
               <Text style={styles.emptyText}>Be the first to post a request on campus</Text>
             </View>
@@ -351,7 +357,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  pillEmoji: { fontSize: 13 },
+  pillEmoji: { fontSize: 13 },  // kept for compat
   pillLabel: { fontSize: 12, fontWeight: '600', color: '#73897a' },
   pillLabelActive: { color: '#fff' },
 
@@ -422,6 +428,7 @@ const styles = StyleSheet.create({
   },
   actionTitle: { fontSize: 13, fontWeight: '700', color: '#182a1e' },
   actionSub: { fontSize: 10, color: '#73897a', marginTop: 1 },
+  actionTextWrap: { flex: 1, minWidth: 0 },
 
   // My Active Orders strip
   activeOrdersWrap: {
@@ -473,7 +480,15 @@ const styles = StyleSheet.create({
   listContent: { padding: 16, paddingTop: 0, flexGrow: 1 },
   count: { fontSize: 11, color: '#73897a', fontWeight: '600', marginBottom: 10 },
   empty: { alignItems: 'center', paddingTop: 80, gap: 8 },
-  emptyIcon: { fontSize: 48 },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 28,
+    backgroundColor: '#e6f4ec',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#182a1e' },
   emptyText: { fontSize: 13, color: '#73897a', textAlign: 'center' },
   loadingWrap: { alignItems: 'center', paddingTop: 80, gap: 12 },

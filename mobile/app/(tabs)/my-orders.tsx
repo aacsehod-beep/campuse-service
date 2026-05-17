@@ -116,8 +116,10 @@ export default function MyOrdersScreen() {
       {isLoading && sections.length === 0 ? (
         <ActivityIndicator color="#0c8a57" style={{ marginTop: 60 }} />
       ) : sections.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>📋</Text>
+      <View style={styles.empty}>
+          <View style={styles.emptyIconWrap}>
+            <Ionicons name="clipboard-outline" size={40} color="#d4e8da" />
+          </View>
           <Text style={styles.emptyTitle}>No {tab} orders</Text>
           <Text style={styles.emptyText}>
             {tab === 'active' ? 'Post a request to get started' : 'Completed orders appear here'}
@@ -152,7 +154,7 @@ export default function MyOrdersScreen() {
                 <Card shadow>
                   <View style={styles.orderRow}>
                     <View style={[styles.catBadge, { backgroundColor: catMeta.bg }]}>
-                      <Text style={{ fontSize: 20 }}>{catMeta.icon}</Text>
+                      <Ionicons name={catMeta.icon as any} size={22} color={catMeta.color} />
                     </View>
                     <View style={styles.orderInfo}>
                       <Text style={styles.orderDesc} numberOfLines={2}>{order.description}</Text>
@@ -240,7 +242,15 @@ const styles = StyleSheet.create({
   sectionHeaderText: { fontSize: 11, fontWeight: '700', color: '#73897a', textTransform: 'uppercase', letterSpacing: 0.5 },
   list: { padding: 16, flexGrow: 1 },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyIcon: { fontSize: 40 },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: '#e6f4ec',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   emptyTitle: { fontSize: 15, fontWeight: '700', color: '#182a1e' },
   emptyText: { fontSize: 13, color: '#73897a', textAlign: 'center' },
   orderRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

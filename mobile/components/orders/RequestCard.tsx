@@ -51,7 +51,7 @@ export function RequestCard({ order }: RequestCardProps) {
             </Text>
           </View>
           <View style={[styles.categoryIcon, { backgroundColor: categoryMeta.bg }]}>
-            <Text style={styles.categoryEmoji}>{categoryMeta.icon}</Text>
+            <Ionicons name={categoryMeta.icon as any} size={22} color={categoryMeta.color} />
           </View>
         </View>
 
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  categoryEmoji: { fontSize: 22 },
+
   meta: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaRight: { marginLeft: 'auto' },

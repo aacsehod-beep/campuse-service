@@ -133,17 +133,17 @@ export const CATEGORY_META: Record<
   OrderCategory,
   { label: string; icon: string; color: string; bg: string }
 > = {
-  food: { label: 'Food & Tiffin', icon: '🍱', color: '#fb923c', bg: 'rgba(249,115,22,0.1)' },
-  print: { label: 'Printouts', icon: '🖨️', color: '#60a5fa', bg: 'rgba(59,130,246,0.1)' },
-  notes: { label: 'Notes', icon: '📝', color: '#4ade80', bg: 'rgba(34,197,94,0.1)' },
-  ride: { label: 'Ride Share', icon: '🛵', color: '#c084fc', bg: 'rgba(168,85,247,0.1)' },
-  assessment: { label: 'Assessment', icon: '📋', color: '#f87171', bg: 'rgba(239,68,68,0.1)' },
-  project: { label: 'Project', icon: '💻', color: '#818cf8', bg: 'rgba(99,102,241,0.1)' },
-  coaching: { label: 'Coaching', icon: '🎓', color: '#fbbf24', bg: 'rgba(245,158,11,0.1)' },
-  design: { label: 'Design', icon: '🎨', color: '#e879f9', bg: 'rgba(217,70,239,0.1)' },
-  event: { label: 'Event', icon: '🎉', color: '#2dd4bf', bg: 'rgba(20,184,166,0.1)' },
-  marketplace: { label: 'Marketplace', icon: '🛒', color: '#0c8a57', bg: 'rgba(12,138,87,0.1)' },
-  others: { label: 'Others', icon: '📦', color: '#9ca3af', bg: 'rgba(107,114,128,0.1)' },
+  food:        { label: 'Food & Tiffin', icon: 'fast-food-outline',      color: '#fb923c', bg: 'rgba(249,115,22,0.1)' },
+  print:       { label: 'Printouts',     icon: 'print-outline',           color: '#60a5fa', bg: 'rgba(59,130,246,0.1)' },
+  notes:       { label: 'Notes',         icon: 'document-text-outline',   color: '#4ade80', bg: 'rgba(34,197,94,0.1)' },
+  ride:        { label: 'Ride Share',    icon: 'bicycle-outline',         color: '#c084fc', bg: 'rgba(168,85,247,0.1)' },
+  assessment:  { label: 'Assessment',   icon: 'clipboard-outline',       color: '#f87171', bg: 'rgba(239,68,68,0.1)' },
+  project:     { label: 'Project',      icon: 'laptop-outline',          color: '#818cf8', bg: 'rgba(99,102,241,0.1)' },
+  coaching:    { label: 'Coaching',     icon: 'school-outline',          color: '#fbbf24', bg: 'rgba(245,158,11,0.1)' },
+  design:      { label: 'Design',       icon: 'color-palette-outline',   color: '#e879f9', bg: 'rgba(217,70,239,0.1)' },
+  event:       { label: 'Event',        icon: 'calendar-outline',        color: '#2dd4bf', bg: 'rgba(20,184,166,0.1)' },
+  marketplace: { label: 'Marketplace',  icon: 'cart-outline',            color: '#0c8a57', bg: 'rgba(12,138,87,0.1)' },
+  others:      { label: 'Others',       icon: 'cube-outline',            color: '#9ca3af', bg: 'rgba(107,114,128,0.1)' },
 };
 
 export const STATUS_META: Record<

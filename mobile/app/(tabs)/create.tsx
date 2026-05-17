@@ -21,18 +21,18 @@ import { Card } from '@/components/ui/Card';
 import Toast from 'react-native-toast-message';
 import * as Haptics from 'expo-haptics';
 
-const CATEGORIES: { id: OrderCategory; label: string; emoji: string }[] = [
-  { id: 'food', label: 'Food', emoji: '🍱' },
-  { id: 'print', label: 'Prints', emoji: '🖨️' },
-  { id: 'notes', label: 'Notes', emoji: '📝' },
-  { id: 'ride', label: 'Ride', emoji: '🛵' },
-  { id: 'assessment', label: 'Assessment', emoji: '📋' },
-  { id: 'project', label: 'Project', emoji: '💻' },
-  { id: 'coaching', label: 'Coaching', emoji: '🎓' },
-  { id: 'design', label: 'Design', emoji: '🎨' },
-  { id: 'event', label: 'Event', emoji: '🎉' },
-  { id: 'marketplace', label: 'Marketplace', emoji: '🛒' },
-  { id: 'others', label: 'Others', emoji: '📦' },
+const CATEGORIES: { id: OrderCategory; label: string; icon: string }[] = [
+  { id: 'food',        label: 'Food',        icon: 'fast-food-outline' },
+  { id: 'print',       label: 'Prints',      icon: 'print-outline' },
+  { id: 'notes',       label: 'Notes',       icon: 'document-text-outline' },
+  { id: 'ride',        label: 'Ride',        icon: 'bicycle-outline' },
+  { id: 'assessment',  label: 'Assessment',  icon: 'clipboard-outline' },
+  { id: 'project',     label: 'Project',     icon: 'laptop-outline' },
+  { id: 'coaching',    label: 'Coaching',    icon: 'school-outline' },
+  { id: 'design',      label: 'Design',      icon: 'color-palette-outline' },
+  { id: 'event',       label: 'Event',       icon: 'calendar-outline' },
+  { id: 'marketplace', label: 'Marketplace', icon: 'cart-outline' },
+  { id: 'others',      label: 'Others',      icon: 'cube-outline' },
 ];
 
 const STEPS = ['Category', 'Details', 'Budget', 'Options'];
@@ -146,7 +146,13 @@ export default function CreateScreen() {
                   onPress={() => update('category', cat.id)}
                   style={[styles.catItem, form.category === cat.id && styles.catItemActive]}
                 >
-                  <Text style={styles.catEmoji}>{cat.emoji}</Text>
+                  <View style={[styles.catIconWrap, form.category === cat.id && styles.catIconWrapActive]}>
+                    <Ionicons
+                      name={cat.icon as any}
+                      size={18}
+                      color={form.category === cat.id ? '#0c8a57' : '#73897a'}
+                    />
+                  </View>
                   <Text style={[styles.catLabel, form.category === cat.id && styles.catLabelActive]}>
                     {cat.label}
                   </Text>
@@ -342,7 +348,16 @@ const styles = StyleSheet.create({
     borderColor: '#d4e8da',
   },
   catItemActive: { backgroundColor: '#e0f5ec', borderColor: '#0c8a57' },
-  catEmoji: { fontSize: 18 },
+  catEmoji: { fontSize: 18 },  // kept for compat
+  catIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#f0faf4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  catIconWrapActive: { backgroundColor: '#dcfce7' },
   catLabel: { fontSize: 12, fontWeight: '600', color: '#73897a' },
   catLabelActive: { color: '#0c8a57' },
 
