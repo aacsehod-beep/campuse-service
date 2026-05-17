@@ -23,6 +23,7 @@ import { ChatListSkeleton } from '@/components/ui/Skeleton';
 import { getSocket, joinOrderRoom, leaveOrderRoom, emitTypingStart, emitTypingStop } from '@/lib/socket';
 
 type View = 'list' | 'thread';
+const CHAT_ACTIVE_STATUSES = ['ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS', 'DELIVERED'];
 
 export default function ChatScreen() {
   const { user } = useAuthStore();
@@ -53,12 +54,17 @@ export default function ChatScreen() {
       const uniqueOrders = allOrders.filter(
         (o, i, arr) => arr.findIndex((x) => x._id === o._id) === i
       );
-      setActiveOrders(uniqueOrders.filter((o) => o.assignedTo));
+      setActiveOrders(
+        uniqueOrders.filter(
+          (o) => o.assignedTo && CHAT_ACTIVE_STATUSES.includes(o.status)
+        )
+      );
     } catch {}
     setIsLoading(false);
   };
 
   const openThread = async (order: Order) => {
+    if (!CHAT_ACTIVE_STATUSES.includes(order.status)) return;
     setSelectedOrder(order);
     setView('thread');
     setIsLoading(true);

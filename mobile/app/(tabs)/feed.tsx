@@ -73,13 +73,26 @@ export default function FeedScreen() {
     if (!isLoading && hasMore) fetchOrders();
   };
 
+  const visibleOrders = orders.filter((order) => {
+    const assignedProviderId = order.assignedTo?._id;
+    const currentUserId = user?._id;
+    const isOwner = order.userId?._id === currentUserId;
+
+    // Once a customer selects/assigns a provider, hide that request from every other provider.
+    if (assignedProviderId && assignedProviderId !== currentUserId && !isOwner) {
+      return false;
+    }
+
+    return true;
+  });
+
   const filteredOrders = search.trim()
-    ? orders.filter((o) =>
+    ? visibleOrders.filter((o) =>
         o.description.toLowerCase().includes(search.toLowerCase()) ||
         o.category.toLowerCase().includes(search.toLowerCase()) ||
         (o.userId?.name || '').toLowerCase().includes(search.toLowerCase())
       )
-    : orders;
+    : visibleOrders;
 
   const showDashboard = !search && !filters.category;
 

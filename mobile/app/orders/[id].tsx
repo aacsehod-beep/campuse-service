@@ -88,7 +88,7 @@ export default function OrderDetailScreen() {
       .catch(() => {
         setMyBidOverride(null);
       });
-  }, [id, user?._id]);
+  }, [id, user?._id, activeOrder?.updatedAt, activeOrder?.status]);
 
   // Bid countdown — tick every second from order creation
   useEffect(() => {
@@ -247,6 +247,8 @@ export default function OrderDetailScreen() {
     return bidUserId === user?._id;
   });
   const myBid = myBidFromOrder || myBidOverride;
+  const isAssignedElsewhere = !!order.assignedTo && !isOwner && !isProvider;
+  const isMyBidRejected = myBid?.status === 'rejected';
 
   const STATUS_STEPS = ['CREATED', 'BROADCASTED', 'ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
 
@@ -293,13 +295,29 @@ export default function OrderDetailScreen() {
           </View>
         ) : null}
         {/* Track order button */}
-        {['ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS'].includes(order.status) && (
+        {(isOwner || isProvider) && ['ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS'].includes(order.status) && (
           <TouchableOpacity onPress={handleTrackOrder} style={styles.trackBtn}>
             <Ionicons name="navigate-outline" size={14} color="#fff" />
             <Text style={styles.trackBtnText}>Track Order</Text>
           </TouchableOpacity>
         )}
       </Card>
+
+      {(isAssignedElsewhere || isMyBidRejected) && (
+        <Card shadow style={styles.unavailableCard}>
+          <View style={styles.unavailableIconWrap}>
+            <Ionicons name="information-circle-outline" size={18} color="#f97316" />
+          </View>
+          <View style={styles.unavailableTextWrap}>
+            <Text style={styles.unavailableTitle}>This request is no longer available</Text>
+            <Text style={styles.unavailableText}>
+              {isMyBidRejected
+                ? 'Customer selected another provider. This order is kept only for your history.'
+                : 'Customer has already selected another provider for this request.'}
+            </Text>
+          </View>
+        </Card>
+      )}
 
       {/* Parties */}
       <View style={styles.row2}>
@@ -619,6 +637,18 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   trackBtnText: { fontSize: 12, color: '#fff', fontWeight: '700' },
+  unavailableCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderColor: '#fde7d3', borderWidth: 1 },
+  unavailableIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff7ed',
+  },
+  unavailableTextWrap: { flex: 1, gap: 4 },
+  unavailableTitle: { fontSize: 13, fontWeight: '700', color: '#9a3412' },
+  unavailableText: { fontSize: 12, lineHeight: 18, color: '#7c2d12' },
   row2: { flexDirection: 'row', gap: 10 },
   partyCard: { flex: 1, alignItems: 'center', gap: 6, padding: 14 },
   partyRole: { fontSize: 10, fontWeight: '700', color: '#73897a', textTransform: 'uppercase' },
