@@ -57,7 +57,7 @@ export default function MyOrdersScreen() {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const { data } = await ordersAPI.getMy({ role });
+      const { data } = await ordersAPI.getMy({ role, page: 1, limit: 100 });
       setOrders(data.orders || []);
     } catch {
       // ignore
@@ -67,6 +67,14 @@ export default function MyOrdersScreen() {
   };
 
   useEffect(() => { fetchOrders(); }, [role]);
+
+  useEffect(() => {
+    const hasActive = orders.some((o) => ACTIVE_STATUSES.includes(o.status));
+    const hasDone = orders.some((o) => DONE_STATUSES.includes(o.status));
+    if (!hasActive && hasDone && tab === 'active') {
+      setTab('completed');
+    }
+  }, [orders, tab]);
 
   const filtered = orders.filter((o) =>
     tab === 'active' ? ACTIVE_STATUSES.includes(o.status) : DONE_STATUSES.includes(o.status)

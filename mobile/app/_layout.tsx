@@ -46,10 +46,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="orders/[id]"
             options={{
-              headerShown: true,
-              headerTitle: 'Order Details',
-              headerStyle: { backgroundColor: '#f0faf4' },
-              headerTintColor: '#182a1e',
+              headerShown: false,
             }}
           />
           <Stack.Screen

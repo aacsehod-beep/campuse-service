@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
+  Animated,
   View,
   Text,
   StyleSheet,
@@ -47,6 +48,7 @@ export default function OrderDetailScreen() {
   const [deliveryProof, setDeliveryProof] = useState('');
   const [myBidOverride, setMyBidOverride] = useState<Bid | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const bikeBob = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (id) {
@@ -110,6 +112,17 @@ export default function OrderDetailScreen() {
     return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
   }, [activeOrder?._id, activeOrder?.status]);
 
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bikeBob, { toValue: 1, duration: 550, useNativeDriver: true }),
+        Animated.timing(bikeBob, { toValue: 0, duration: 550, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [bikeBob]);
+
   const handleTrackOrder = async () => {
     const coords = activeOrder?.location?.coordinates;
     if (coords && coords[0] !== 0 && coords[1] !== 0) {
@@ -170,10 +183,10 @@ export default function OrderDetailScreen() {
     if (!id) return;
     try {
       await updateOrderStatus(id, status);
+      fetchOrderById(id);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (status === 'COMPLETED') {
-        Toast.show({ type: 'success', text1: 'Order completed successfully!' });
-        router.replace('/(tabs)/feed' as any);
+        Toast.show({ type: 'success', text1: 'Order completed. You can leave a review now.' });
         return;
       }
       Toast.show({ type: 'success', text1: `Status updated to ${status}` });
@@ -243,13 +256,18 @@ export default function OrderDetailScreen() {
     const toUser = user?._id === activeOrder.userId._id
       ? activeOrder.assignedTo?._id
       : activeOrder.userId._id;
-    if (!toUser) return;
+    if (!toUser) {
+      Toast.show({ type: 'error', text1: 'Unable to identify review recipient' });
+      return;
+    }
     try {
       await reviewsAPI.createReview({ toUser, orderId: activeOrder._id, rating, comment: reviewComment });
       setReviewDone(true);
+      if (id) fetchOrderById(id);
       Toast.show({ type: 'success', text1: 'Review submitted! ⭐' });
-    } catch {
-      Toast.show({ type: 'error', text1: 'Failed to submit review' });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to submit review';
+      Toast.show({ type: 'error', text1: msg });
     }
   };
 
@@ -274,6 +292,8 @@ export default function OrderDetailScreen() {
   const isProvider = user?._id === order.assignedTo?._id;
   const statusMeta = STATUS_META[order.status];
   const catMeta = CATEGORY_META[order.category];
+  const hasReviewed = isOwner ? order.isReviewedByCustomer : isProvider ? order.isReviewedByProvider : false;
+  const canLeaveReview = order.status === 'COMPLETED' && (isOwner || isProvider) && !reviewDone && !hasReviewed;
   const isChatLocked = order.status === 'COMPLETED' || order.status === 'CANCELLED';
   const myBidFromOrder = (order.bids || []).find((b) => {
     const bidUserId = typeof b.userId === 'string' ? b.userId : b.userId?._id;
@@ -322,28 +342,52 @@ export default function OrderDetailScreen() {
   }, null);
 
   const STATUS_STEPS = ['CREATED', 'BROADCASTED', 'ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS', 'DELIVERED', 'COMPLETED'];
+  const currentStepIndex = Math.max(0, STATUS_STEPS.indexOf(order.status));
+  const timelineProgressPct = (currentStepIndex / (STATUS_STEPS.length - 1)) * 100;
+  const bikeLift = bikeBob.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -3],
+  });
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.topBackBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={18} color="#153728" />
+        </TouchableOpacity>
+        <View style={styles.topTitleWrap}>
+          <Text style={styles.topTitle}>Order Details</Text>
+          <Text style={styles.topSubtitle}>#{order._id.slice(-6).toUpperCase()}</Text>
+        </View>
+        <View style={[styles.topStatusDot, { backgroundColor: statusMeta.bg }]}>
+          <Ionicons name="ellipse" size={8} color={statusMeta.color} />
+        </View>
+      </View>
+
       {/* Status banner */}
-      <Card shadow style={[styles.statusBanner, { borderLeftWidth: 3, borderLeftColor: statusMeta.color }]}>
+      <Card shadow style={styles.statusBanner}>
         <View style={styles.statusTop}>
           <View style={[styles.catIcon, { backgroundColor: catMeta.bg }]}>
-            <Ionicons name={catMeta.icon as any} size={22} color={catMeta.color} />
+            <Ionicons name={catMeta.icon as any} size={20} color={catMeta.color} />
           </View>
           <View style={styles.statusInfo}>
             <View style={styles.statusBadges}>
               <Badge label={statusMeta.label} color={statusMeta.color} bg={statusMeta.bg} />
-              {order.urgency === 'asap' && (
-                <Badge label="⚡ ASAP" color="#fb923c" bg="rgba(249,115,22,0.12)" />
-              )}
               <Badge
-                label={order.mode === 'bidding' ? '🔖 Bidding' : order.mode === 'instant' ? '⚡ Instant' : '💰 Fixed'}
-                color="#60a5fa"
-                bg="rgba(59,130,246,0.12)"
+                label={order.mode === 'bidding' ? 'Bidding' : order.mode === 'instant' ? 'Instant' : 'Fixed'}
+                color="#4f86f7"
+                bg="rgba(79,134,247,0.12)"
               />
             </View>
-            <Text style={styles.orderDesc}>{order.description}</Text>
+            <View style={styles.titleRowCompact}>
+              <Text style={styles.orderDesc}>{order.description}</Text>
+              {order.urgency === 'asap' && (
+                <View style={styles.urgencyInline}>
+                  <Ionicons name="flash" size={12} color="#f97316" />
+                </View>
+              )}
+            </View>
           </View>
         </View>
         {(order.finalPrice || order.budget) && (
@@ -352,11 +396,22 @@ export default function OrderDetailScreen() {
           </Text>
         )}
         {order.location?.address && (
-          <View style={styles.locationRow}>
+          <View style={styles.locationRowCompact}>
             <Ionicons name="location-outline" size={14} color="#73897a" />
             <Text style={styles.locationText}>{order.location.address}</Text>
           </View>
         )}
+        <View style={styles.metaRowCompact}>
+          <View style={styles.metaInlineItem}>
+            <Ionicons name="pricetag-outline" size={12} color="#6a8477" />
+            <Text style={styles.metaInlineText}>{catMeta.label}</Text>
+          </View>
+          <View style={styles.metaDividerDot} />
+          <View style={styles.metaInlineItem}>
+            <Ionicons name="time-outline" size={12} color="#6a8477" />
+            <Text style={styles.metaInlineText}>{timeAgo(order.createdAt)}</Text>
+          </View>
+        </View>
         <Text style={styles.posted}>Posted {timeAgo(order.createdAt)}</Text>
         {/* Bid countdown */}
         {order.mode === 'bidding' && ['CREATED', 'BROADCASTED'].includes(order.status) && countdown ? (
@@ -465,45 +520,59 @@ export default function OrderDetailScreen() {
       </View>
 
       {/* Status Timeline */}
-      <Card shadow>
-        <Text style={styles.sectionTitle}>Progress</Text>
+      <Card shadow style={styles.progressCardWrap}>
+        <View style={styles.progressTitleRow}>
+          <Text style={styles.sectionTitle}>Progress Timeline</Text>
+          <Text style={styles.progressHint}>Live status</Text>
+        </View>
+        <View style={styles.timelineRailWrap}>
+          <View style={styles.timelineRail} />
+          <View style={[styles.timelineRailDone, { width: `${timelineProgressPct}%` }]} />
+          <Animated.View
+            style={[
+              styles.bikeWrap,
+              {
+                left: `${timelineProgressPct}%`,
+                transform: [{ translateX: -12 }, { translateY: bikeLift }],
+              },
+            ]}
+          >
+            <Ionicons name="bicycle-outline" size={15} color="#0c8a57" />
+          </Animated.View>
+          <View style={styles.timelineNodesRow}>
+            {STATUS_STEPS.map((step, idx) => {
+              const isDone = idx <= currentStepIndex;
+              return <View key={step} style={[styles.timelineNode, isDone && styles.timelineNodeDone]} />;
+            })}
+          </View>
+        </View>
+
         {STATUS_STEPS.filter((s) => s !== 'CANCELLED').map((step, i) => {
           const hist = order.statusHistory.find((h) => h.status === step);
-          const isCurrent = order.status === step;
-          const isPast = STATUS_STEPS.indexOf(step) < STATUS_STEPS.indexOf(order.status);
-          const isCancelled = order.status === 'CANCELLED';
+          const stepIndex = STATUS_STEPS.indexOf(step);
+          const isCurrent = stepIndex === currentStepIndex;
+          const isPast = stepIndex < currentStepIndex;
+
           return (
             <View key={step} style={styles.timelineItem}>
               <View style={styles.timelineLeft}>
                 <View
                   style={[
                     styles.timelineDot,
-                    (isPast || isCurrent) && !isCancelled && styles.timelineDotDone,
-                    isCurrent && !isCancelled && styles.timelineDotCurrent,
+                    (isPast || isCurrent) && styles.timelineDotDone,
+                    isCurrent && styles.timelineDotCurrent,
                   ]}
                 />
-                {i < STATUS_STEPS.length - 2 && (
-                  <View
-                    style={[
-                      styles.timelineLine,
-                      isPast && !isCancelled && styles.timelineLineDone,
-                    ]}
-                  />
+                {i < STATUS_STEPS.length - 1 && (
+                  <View style={[styles.timelineLine, isPast && styles.timelineLineDone]} />
                 )}
               </View>
               <View style={styles.timelineRight}>
-                <Text
-                  style={[
-                    styles.timelineLabel,
-                    (isPast || isCurrent) && !isCancelled && styles.timelineLabelDone,
-                  ]}
-                >
+                <Text style={[styles.timelineLabel, (isPast || isCurrent) && styles.timelineLabelDone]}>
                   {step.replace('_', ' ')}
-                  {isCurrent && !isCancelled && ' ← now'}
+                  {isCurrent && ' - now'}
                 </Text>
-                {hist && (
-                  <Text style={styles.timelineTime}>{timeAgo(hist.timestamp)}</Text>
-                )}
+                <Text style={styles.timelineTime}>{hist ? timeAgo(hist.timestamp) : 'Pending'}</Text>
                 {!!hist?.note && step === 'DELIVERED' && (
                   <Text style={styles.timelineNote}>{hist.note}</Text>
                 )}
@@ -512,10 +581,10 @@ export default function OrderDetailScreen() {
           );
         })}
         {order.status === 'CANCELLED' && (
-          <View style={[styles.timelineItem, { marginTop: 8 }]}>
-            <Ionicons name="close-circle" size={20} color="#ef4444" />
-            <Text style={[styles.timelineLabel, { color: '#f87171', marginLeft: 8 }]}>
-              CANCELLED{order.cancelReason ? ` — ${order.cancelReason}` : ''}
+          <View style={styles.cancelledRow}>
+            <Ionicons name="close-circle" size={18} color="#ef4444" />
+            <Text style={styles.cancelledText}>
+              Cancelled{order.cancelReason ? ` - ${order.cancelReason}` : ''}
             </Text>
           </View>
         )}
@@ -681,7 +750,7 @@ export default function OrderDetailScreen() {
       )}
 
       {/* Review */}
-      {order.status === 'COMPLETED' && (isOwner || isProvider) && !reviewDone && (
+      {canLeaveReview && (
         <Card shadow>
           <Text style={styles.sectionTitle}>Leave a Review</Text>
           <StarRating rating={rating} onRate={setRating} size={38} />
@@ -753,32 +822,115 @@ export default function OrderDetailScreen() {
       )}
 
       {(order.status === 'COMPLETED' || order.status === 'CANCELLED') && (
-        <Button
-          title="Back To Home"
-          onPress={() => router.replace('/(tabs)/feed' as any)}
-          fullWidth
-          variant="outline"
-        />
+        <TouchableOpacity style={styles.homeAction} onPress={() => router.replace('/(tabs)/feed' as any)}>
+          <Ionicons name="home-outline" size={18} color="#ffffff" />
+          <Text style={styles.homeActionText}>Home</Text>
+        </TouchableOpacity>
       )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#f0faf4' },
+  safe: { flex: 1, backgroundColor: '#ecf8f1' },
+  scroll: { flex: 1, backgroundColor: '#ecf8f1' },
   container: { padding: 16, gap: 12, paddingBottom: 60 },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 2,
+    paddingBottom: 4,
+  },
+  topBackBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#cfe4d8',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topTitleWrap: { flex: 1 },
+  topTitle: { fontSize: 16, fontWeight: '800', color: '#153728' },
+  topSubtitle: { fontSize: 11, color: '#5e7f6d', marginTop: 1 },
+  topStatusDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0faf4' },
   notFound: { color: '#73897a', fontSize: 15 },
-  statusBanner: { gap: 10 },
+  statusBanner: {
+    gap: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#dcebe3',
+    backgroundColor: '#fbfefc',
+    padding: 12,
+  },
   statusTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  catIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  catIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   statusInfo: { flex: 1, gap: 6 },
-  statusBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  orderDesc: { fontSize: 14, color: '#182a1e', fontWeight: '500' },
-  price: { fontSize: 20, fontWeight: '800', color: '#0c8a57' },
+  statusBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  titleRowCompact: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  urgencyInline: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff7ed',
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+  },
+  orderDesc: { flex: 1, fontSize: 13, color: '#182a1e', fontWeight: '600', lineHeight: 18 },
+  price: { fontSize: 18, fontWeight: '800', color: '#0c8a57', marginTop: 2 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  locationRowCompact: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 1 },
   locationText: { fontSize: 12, color: '#73897a', flex: 1 },
-  posted: { fontSize: 11, color: '#73897a' },
+  metaStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    backgroundColor: '#f2faf6',
+    borderWidth: 1,
+    borderColor: '#dbede3',
+  },
+  metaChipText: {
+    fontSize: 10,
+    color: '#537565',
+    fontWeight: '700',
+    textTransform: 'capitalize',
+  },
+  metaRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 2,
+  },
+  metaInlineItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaInlineText: { fontSize: 11, color: '#6a8477', fontWeight: '600' },
+  metaDividerDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#bfd7ca',
+  },
+  posted: { fontSize: 10, color: '#83988c', marginTop: 1 },
   countdownRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   countdownText: { fontSize: 12, color: '#f97316', fontWeight: '600' },
   trackBtn: {
@@ -845,7 +997,16 @@ const styles = StyleSheet.create({
   },
   sosBtnText: { fontSize: 12, fontWeight: '800', color: '#fff' },
   row2: { flexDirection: 'row', gap: 10 },
-  partyCard: { flex: 1, alignItems: 'center', gap: 6, padding: 14 },
+  partyCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#d5e8dc',
+    backgroundColor: '#ffffff',
+  },
   partyRole: { fontSize: 10, fontWeight: '700', color: '#73897a', textTransform: 'uppercase' },
   partyName: { fontSize: 13, fontWeight: '700', color: '#182a1e' },
   trustRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap', justifyContent: 'center' },
@@ -861,7 +1022,66 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   partyMeta: { fontSize: 11, color: '#73897a' },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#182a1e', marginBottom: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: '800', color: '#182a1e', marginBottom: 10 },
+  progressCardWrap: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#d5e8dc',
+    backgroundColor: '#ffffff',
+    gap: 6,
+  },
+  progressTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  progressHint: { fontSize: 11, color: '#5b7d6c', fontWeight: '700' },
+  timelineRailWrap: {
+    marginBottom: 6,
+    paddingHorizontal: 6,
+    paddingTop: 4,
+    paddingBottom: 14,
+    position: 'relative',
+  },
+  timelineRail: {
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: '#dbece2',
+  },
+  timelineRailDone: {
+    position: 'absolute',
+    left: 6,
+    top: 4,
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: '#0c8a57',
+  },
+  bikeWrap: {
+    position: 'absolute',
+    top: -6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ebf8f0',
+    borderWidth: 1,
+    borderColor: '#bfe1cd',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timelineNodesRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  timelineNode: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#cfe4d8',
+  },
+  timelineNodeDone: {
+    backgroundColor: '#0c8a57',
+  },
   timelineItem: { flexDirection: 'row', gap: 8, minHeight: 36 },
   timelineLeft: { alignItems: 'center', width: 20 },
   timelineDot: {
@@ -880,6 +1100,18 @@ const styles = StyleSheet.create({
   timelineLabelDone: { color: '#182a1e' },
   timelineTime: { fontSize: 10, color: '#73897a' },
   timelineNote: { fontSize: 11, color: '#537565', marginTop: 2 },
+  cancelledRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#fed7d7',
+    backgroundColor: '#fff5f5',
+    padding: 10,
+  },
+  cancelledText: { fontSize: 12, fontWeight: '700', color: '#b91c1c', flex: 1 },
   bidCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#d4e8da' },
   bidInfo: { flex: 1 },
   bidSectionHead: { marginBottom: 4 },
@@ -956,7 +1188,16 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   chatLockedChipText: { fontSize: 11, fontWeight: '700', color: '#3a6d4f' },
-  chatMessages: { gap: 6, maxHeight: 200, overflow: 'scroll' },
+  chatMessages: {
+    gap: 6,
+    maxHeight: 220,
+    backgroundColor: '#f7fcf9',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#dbece2',
+    padding: 10,
+    overflow: 'scroll',
+  },
   msgRow: { flexDirection: 'row' },
   msgRowMe: { justifyContent: 'flex-end' },
   bubble: { maxWidth: '75%', borderRadius: 12, padding: 8 },
@@ -988,4 +1229,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtnDisabled: { backgroundColor: '#d7e5dc' },
+  homeAction: {
+    marginTop: 4,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#0c8a57',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  homeActionText: { fontSize: 13, fontWeight: '800', color: '#ffffff' },
 });

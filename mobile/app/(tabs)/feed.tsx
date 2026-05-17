@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Animated,
   View,
   Text,
   StyleSheet,
@@ -44,7 +43,6 @@ export default function FeedScreen() {
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [myOrders, setMyOrders] = useState<Order[]>([]);
-  const bannerFloat = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
     fetchOrders(true);
@@ -64,17 +62,6 @@ export default function FeedScreen() {
       setMyOrders(active);
     }).catch(() => {});
   }, [filters]);
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(bannerFloat, { toValue: -5, duration: 1800, useNativeDriver: true }),
-        Animated.timing(bannerFloat, { toValue: 0, duration: 1800, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [bannerFloat]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -107,23 +94,6 @@ export default function FeedScreen() {
       )
     : visibleOrders;
 
-  const urgentOrders = visibleOrders
-    .filter((order) => order.urgency === 'asap' && ['CREATED', 'BROADCASTED'].includes(order.status))
-    .slice(0, 5);
-  const categoryCounts = visibleOrders.reduce<Record<string, number>>((acc, order) => {
-    acc[order.category] = (acc[order.category] || 0) + 1;
-    return acc;
-  }, {});
-  const trendingCategories = Object.entries(categoryCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([category, count]) => ({
-      category: category as OrderCategory,
-      count,
-      label: CATEGORIES.find((item) => item.id === category)?.label || category,
-      icon: CATEGORIES.find((item) => item.id === category)?.icon || 'flash-outline',
-    }));
-  const lastCategory = myOrders[0]?.category;
   const hour = new Date().getHours();
   const contextualBanner = hour < 11
     ? {
@@ -233,24 +203,28 @@ export default function FeedScreen() {
             {/* Dashboard section — only shown when not searching/filtering */}
             {showDashboard && (
               <View style={styles.dashboard}>
-                <Animated.View style={[styles.heroBanner, { transform: [{ translateY: bannerFloat }] }]}>
-                  <View style={styles.heroBannerIcon}>
-                    <Ionicons name={contextualBanner.icon as any} size={20} color="#0c8a57" />
+                <View style={styles.heroBanner}>
+                  <View style={styles.heroTopRow}>
+                    <View style={styles.heroBannerIcon}>
+                      <Ionicons name={contextualBanner.icon as any} size={20} color="#0c8a57" />
+                    </View>
+                    <View style={styles.heroLiveChip}>
+                      <Ionicons name="pulse-outline" size={12} color="#0c8a57" />
+                      <Text style={styles.heroLiveText}>Live campus feed</Text>
+                    </View>
                   </View>
-                  <View style={styles.heroBannerTextWrap}>
-                    <Text style={styles.heroBannerTitle}>{contextualBanner.title}</Text>
-                    <Text style={styles.heroBannerSub}>{contextualBanner.subtitle}</Text>
-                  </View>
+                  <Text style={styles.heroBannerTitle}>{contextualBanner.title}</Text>
+                  <Text style={styles.heroBannerSub}>{contextualBanner.subtitle}</Text>
                   <TouchableOpacity
                     style={styles.heroBannerBtn}
                     onPress={() => {
                       if (hour < 11 || hour >= 17) router.push('/(tabs)/create');
-                      else if (trendingCategories[0]?.category) setFilters({ category: trendingCategories[0].category });
+                      else router.push('/(tabs)/create');
                     }}
                   >
                     <Text style={styles.heroBannerBtnText}>{contextualBanner.cta}</Text>
                   </TouchableOpacity>
-                </Animated.View>
+                </View>
 
                 {/* Stats 2-col grid */}
                 <View style={styles.statsGrid}>
@@ -291,62 +265,6 @@ export default function FeedScreen() {
                     </View>
                   </TouchableOpacity>
                 </View>
-
-                {trendingCategories.length > 0 && (
-                  <View style={styles.dynamicSection}>
-                    <View style={styles.sectionRow}>
-                      <Text style={styles.sectionLabel}>TRENDING NOW</Text>
-                      <Text style={styles.countLabel}>Live on campus</Text>
-                    </View>
-                    <View style={styles.trendingRow}>
-                      {trendingCategories.map((item) => (
-                        <TouchableOpacity
-                          key={item.category}
-                          style={styles.trendingCard}
-                          onPress={() => { setFilters({ category: item.category }); fetchOrders(true); }}
-                        >
-                          <View style={styles.trendingIconWrap}>
-                            <Ionicons name={item.icon as any} size={16} color="#0c8a57" />
-                          </View>
-                          <Text style={styles.trendingTitle}>{item.label}</Text>
-                          <Text style={styles.trendingCount}>{item.count} active</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {(urgentOrders.length > 0 || lastCategory) && (
-                  <View style={styles.dynamicSection}>
-                    <View style={styles.sectionRow}>
-                      <Text style={styles.sectionLabel}>SMART PICKS</Text>
-                      {lastCategory && <Text style={styles.countLabel}>Based on your activity</Text>}
-                    </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
-                      {lastCategory && (
-                        <TouchableOpacity
-                          style={styles.smartCard}
-                          onPress={() => { setFilters({ category: lastCategory }); fetchOrders(true); }}
-                        >
-                          <Text style={styles.smartEyebrow}>Repeat category</Text>
-                          <Text style={styles.smartTitle}>{CATEGORIES.find((item) => item.id === lastCategory)?.label || lastCategory}</Text>
-                          <Text style={styles.smartSub}>Jump back into what you use most</Text>
-                        </TouchableOpacity>
-                      )}
-                      {urgentOrders.map((order) => (
-                        <TouchableOpacity
-                          key={order._id}
-                          style={styles.smartCardUrgent}
-                          onPress={() => router.push(`/orders/${order._id}`)}
-                        >
-                          <Text style={styles.smartEyebrowUrgent}>Urgent right now</Text>
-                          <Text style={styles.smartTitle} numberOfLines={2}>{order.description}</Text>
-                          <Text style={styles.smartSub}>{order.category} · {timeAgo(order.createdAt)}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
 
                 {/* My Active Orders strip */}
                 {myOrders.length > 0 && (
@@ -505,14 +423,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 14,
     marginBottom: 12,
-    borderRadius: 22,
+    borderRadius: 24,
     padding: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fffb',
     borderWidth: 1,
-    borderColor: '#d4e8da',
+    borderColor: '#cfe7da',
+    gap: 10,
+  },
+  heroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    gap: 10,
   },
   heroBannerIcon: {
     width: 42,
@@ -522,63 +444,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroBannerTextWrap: { flex: 1, gap: 4 },
-  heroBannerTitle: { fontSize: 15, fontWeight: '800', color: '#182a1e' },
-  heroBannerSub: { fontSize: 12, lineHeight: 18, color: '#537565' },
+  heroLiveChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#cde8d9',
+    backgroundColor: '#ebf8f0',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  heroLiveText: { fontSize: 10, color: '#0c8a57', fontWeight: '700' },
+  heroBannerTitle: { fontSize: 26, fontWeight: '800', color: '#182a1e', lineHeight: 32, maxWidth: '85%' },
+  heroBannerSub: { fontSize: 13, lineHeight: 20, color: '#537565', maxWidth: '95%' },
   heroBannerBtn: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderRadius: 14,
     backgroundColor: '#0c8a57',
+    marginTop: 4,
   },
-  heroBannerBtnText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  heroBannerBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
   dynamicSection: { marginBottom: 10 },
-  trendingRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingBottom: 12 },
-  trendingCard: {
-    flex: 1,
-    minWidth: 100,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#d4e8da',
-    padding: 12,
-    gap: 6,
-  },
-  trendingIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: '#eef8f2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  trendingTitle: { fontSize: 12, fontWeight: '700', color: '#182a1e' },
-  trendingCount: { fontSize: 11, color: '#73897a' },
-  smartCard: {
-    width: 190,
-    marginHorizontal: 4,
-    backgroundColor: '#fff8e8',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#f5e2a8',
-    padding: 14,
-    gap: 6,
-  },
-  smartCardUrgent: {
-    width: 190,
-    marginHorizontal: 4,
-    backgroundColor: '#fff4ef',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#ffd7c2',
-    padding: 14,
-    gap: 6,
-  },
-  smartEyebrow: { fontSize: 10, fontWeight: '800', color: '#9a6700', textTransform: 'uppercase' },
-  smartEyebrowUrgent: { fontSize: 10, fontWeight: '800', color: '#c2410c', textTransform: 'uppercase' },
-  smartTitle: { fontSize: 14, fontWeight: '800', color: '#182a1e' },
-  smartSub: { fontSize: 11, lineHeight: 17, color: '#6b7d72' },
 
   // Stats 2-col grid
   statsGrid: {

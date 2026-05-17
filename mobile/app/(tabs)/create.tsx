@@ -72,7 +72,7 @@ export default function CreateScreen() {
         mode: form.mode,
         urgency: form.urgency,
       };
-      if (form.budget && form.mode === 'fixed') {
+      if (form.budget && ['fixed', 'bidding'].includes(form.mode)) {
         payload.budget = parseFloat(form.budget);
       }
       if (coordinates) {
@@ -186,6 +186,11 @@ export default function CreateScreen() {
                 style={[styles.modeBtn, form.mode === 'fixed' && styles.modeBtnActive]}
                 onPress={() => update('mode', 'fixed')}
               >
+                <Ionicons
+                  name="cash-outline"
+                  size={15}
+                  color={form.mode === 'fixed' ? '#ffffff' : '#73897a'}
+                />
                 <Text style={[styles.modeBtnText, form.mode === 'fixed' && styles.modeBtnTextActive]}>
                   Fixed Price
                 </Text>
@@ -194,6 +199,11 @@ export default function CreateScreen() {
                 style={[styles.modeBtn, form.mode === 'bidding' && styles.modeBtnActive]}
                 onPress={() => update('mode', 'bidding')}
               >
+                <Ionicons
+                  name="trending-up-outline"
+                  size={15}
+                  color={form.mode === 'bidding' ? '#ffffff' : '#73897a'}
+                />
                 <Text style={[styles.modeBtnText, form.mode === 'bidding' && styles.modeBtnTextActive]}>
                   Open Bidding
                 </Text>
@@ -202,12 +212,17 @@ export default function CreateScreen() {
                 style={[styles.modeBtn, form.mode === 'instant' && styles.modeBtnActive]}
                 onPress={() => update('mode', 'instant')}
               >
+                <Ionicons
+                  name="flash-outline"
+                  size={15}
+                  color={form.mode === 'instant' ? '#ffffff' : '#73897a'}
+                />
                 <Text style={[styles.modeBtnText, form.mode === 'instant' && styles.modeBtnTextActive]}>
                   Instant Match
                 </Text>
               </TouchableOpacity>
             </View>
-            {form.mode === 'fixed' && (
+            {['fixed', 'bidding'].includes(form.mode) && (
               <>
                 {/* Quick preset chips */}
                 <View style={styles.presetsRow}>
@@ -224,10 +239,10 @@ export default function CreateScreen() {
                   ))}
                 </View>
                 <Input
-                  label="Budget (₹)"
+                  label={form.mode === 'bidding' ? 'Target Amount (₹)' : 'Budget (₹)'}
                   value={form.budget}
                   onChangeText={(v) => update('budget', v)}
-                  placeholder="Enter amount"
+                  placeholder={form.mode === 'bidding' ? 'Enter target amount for bids' : 'Enter amount'}
                   keyboardType="numeric"
                   leftIcon={<Ionicons name="cash-outline" size={18} color="#73897a" />}
                   containerStyle={{ marginTop: 4 }}
@@ -391,15 +406,20 @@ const styles = StyleSheet.create({
   charCount: { fontSize: 11, color: '#73897a', textAlign: 'right' },
 
   // Pricing mode
-  modeRow: { flexDirection: 'row', gap: 10 },
+  modeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   modeBtn: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '30%',
+    minHeight: 58,
     paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#d4e8da',
     backgroundColor: '#ffffff',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
   },
   modeBtnActive: {
     backgroundColor: '#0c8a57',
@@ -410,7 +430,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  modeBtnText: { fontSize: 13, fontWeight: '700', color: '#73897a' },
+  modeBtnText: { fontSize: 12, fontWeight: '700', color: '#73897a', textAlign: 'center' },
   modeBtnTextActive: { color: '#ffffff' },
   instantInfoWrap: {
     marginTop: 10,
