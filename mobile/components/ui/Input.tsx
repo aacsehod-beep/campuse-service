@@ -26,8 +26,8 @@ export const Input = forwardRef<TextInput, InputProps>(
           <TextInput
             ref={ref}
             style={[styles.input, leftIcon && styles.inputPaddingLeft, rightIcon && styles.inputPaddingRight]}
-            placeholderTextColor="rgba(255,255,255,0.35)"
-            selectionColor="#8b5cf6"
+            placeholderTextColor="#73897a"
+            selectionColor="#0c8a57"
             {...props}
           />
           {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
@@ -42,20 +42,20 @@ Input.displayName = 'Input';
 
 const styles = StyleSheet.create({
   wrapper: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.8)' },
+  label: { fontSize: 13, fontWeight: '600', color: '#182a1e' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#13131f',
+    backgroundColor: '#ffffff',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: '#d4e8da',
     minHeight: 48,
   },
   inputError: { borderColor: '#ef4444' },
   input: {
     flex: 1,
-    color: '#ffffff',
+    color: '#182a1e',
     fontSize: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -64,5 +64,5 @@ const styles = StyleSheet.create({
   inputPaddingRight: { paddingRight: 8 },
   leftIcon: { paddingLeft: 14 },
   rightIcon: { paddingRight: 14 },
-  errorText: { fontSize: 12, color: '#f87171' },
+  errorText: { fontSize: 12, color: '#dc2626' },
 });

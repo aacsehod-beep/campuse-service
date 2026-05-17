@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
+const Service = require('../models/Service');
 
 // @route   GET /api/users/:id
 exports.getUserProfile = async (req, res) => {
@@ -159,5 +160,62 @@ exports.getMyStats = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch stats' });
+  }
+};
+
+// @route   POST /api/users/:id/block
+exports.blockUser = async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    if (targetId === req.user._id.toString()) {
+      return res.status(400).json({ success: false, message: 'Cannot block yourself' });
+    }
+    const target = await User.findById(targetId);
+    if (!target) return res.status(404).json({ success: false, message: 'User not found' });
+
+    await User.findByIdAndUpdate(req.user._id, {
+      $addToSet: { blockedUsers: targetId },
+    });
+    res.json({ success: true, message: `${target.name} has been blocked` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to block user' });
+  }
+};
+
+// @route   DELETE /api/users/:id/block
+exports.unblockUser = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user._id, {
+      $pull: { blockedUsers: req.params.id },
+    });
+    res.json({ success: true, message: 'User unblocked' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to unblock user' });
+  }
+};
+
+// @route   GET /api/users/:id/public — public profile with services
+exports.getPublicProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select(
+      'name avatar rating totalRatings completedOrders hostel isAvailable createdAt'
+    );
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const services = await Service.find({ userId: req.params.id, isActive: true }).sort({ createdAt: -1 });
+    res.json({ success: true, user, services });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch public profile' });
+  }
+};
+
+// @route   GET /api/users/me/blocked
+exports.getBlockedUsers = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .select('blockedUsers')
+      .populate('blockedUsers', 'name avatar hostel');
+    res.json({ success: true, blockedUsers: user?.blockedUsers || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch blocked users' });
   }
 };

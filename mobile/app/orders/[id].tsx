@@ -204,7 +204,7 @@ export default function OrderDetailScreen() {
         )}
         {order.location?.address && (
           <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="location-outline" size={14} color="#73897a" />
             <Text style={styles.locationText}>{order.location.address}</Text>
           </View>
         )}
@@ -351,7 +351,7 @@ export default function OrderDetailScreen() {
                 value={bidPrice}
                 onChangeText={setBidPrice}
                 placeholder="Your price (₹)"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor="#73897a"
                 keyboardType="numeric"
                 style={styles.bidInput}
               />
@@ -359,7 +359,7 @@ export default function OrderDetailScreen() {
                 value={bidMessage}
                 onChangeText={setBidMessage}
                 placeholder="Optional message…"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor="#73897a"
                 style={[styles.bidInput, { marginTop: 8 }]}
               />
               <Button
@@ -419,7 +419,7 @@ export default function OrderDetailScreen() {
             value={reviewComment}
             onChangeText={setReviewComment}
             placeholder="Optional comment…"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor="#73897a"
             style={styles.bidInput}
             multiline
           />
@@ -453,7 +453,7 @@ export default function OrderDetailScreen() {
               value={chatInput}
               onChangeText={setChatInput}
               placeholder="Message…"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#73897a"
               style={styles.chatTextInput}
             />
             <TouchableOpacity onPress={sendMessage} style={styles.sendBtn}>
@@ -467,79 +467,79 @@ export default function OrderDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#0d0d14' },
+  scroll: { flex: 1, backgroundColor: '#f0faf4' },
   container: { padding: 16, gap: 12, paddingBottom: 60 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d0d14' },
-  notFound: { color: 'rgba(255,255,255,0.5)', fontSize: 15 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0faf4' },
+  notFound: { color: '#73897a', fontSize: 15 },
   statusBanner: { gap: 10 },
   statusTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   catIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   statusInfo: { flex: 1, gap: 6 },
   statusBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  orderDesc: { fontSize: 14, color: '#fff', fontWeight: '500' },
-  price: { fontSize: 20, fontWeight: '800', color: '#a78bfa' },
+  orderDesc: { fontSize: 14, color: '#182a1e', fontWeight: '500' },
+  price: { fontSize: 20, fontWeight: '800', color: '#0c8a57' },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  locationText: { fontSize: 12, color: 'rgba(255,255,255,0.5)', flex: 1 },
-  posted: { fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+  locationText: { fontSize: 12, color: '#73897a', flex: 1 },
+  posted: { fontSize: 11, color: '#73897a' },
   row2: { flexDirection: 'row', gap: 10 },
   partyCard: { flex: 1, alignItems: 'center', gap: 6, padding: 14 },
-  partyRole: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' },
-  partyName: { fontSize: 13, fontWeight: '700', color: '#fff' },
-  partyMeta: { fontSize: 11, color: 'rgba(255,255,255,0.45)' },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 10 },
+  partyRole: { fontSize: 10, fontWeight: '700', color: '#73897a', textTransform: 'uppercase' },
+  partyName: { fontSize: 13, fontWeight: '700', color: '#182a1e' },
+  partyMeta: { fontSize: 11, color: '#73897a' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#182a1e', marginBottom: 10 },
   timelineItem: { flexDirection: 'row', gap: 8, minHeight: 36 },
   timelineLeft: { alignItems: 'center', width: 20 },
   timelineDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#d4e8da',
     marginTop: 4,
   },
-  timelineDotDone: { backgroundColor: '#7c3aed' },
-  timelineDotCurrent: { backgroundColor: '#a78bfa', width: 12, height: 12, borderRadius: 6 },
-  timelineLine: { flex: 1, width: 2, backgroundColor: 'rgba(255,255,255,0.1)', marginTop: 2 },
-  timelineLineDone: { backgroundColor: '#7c3aed' },
+  timelineDotDone: { backgroundColor: '#0c8a57' },
+  timelineDotCurrent: { backgroundColor: '#209e82', width: 12, height: 12, borderRadius: 6 },
+  timelineLine: { flex: 1, width: 2, backgroundColor: '#d4e8da', marginTop: 2 },
+  timelineLineDone: { backgroundColor: '#0c8a57' },
   timelineRight: { flex: 1, paddingBottom: 8 },
-  timelineLabel: { fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: '600' },
-  timelineLabelDone: { color: '#fff' },
-  timelineTime: { fontSize: 10, color: 'rgba(255,255,255,0.3)' },
-  bidCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  timelineLabel: { fontSize: 12, color: '#73897a', fontWeight: '600' },
+  timelineLabelDone: { color: '#182a1e' },
+  timelineTime: { fontSize: 10, color: '#73897a' },
+  bidCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#d4e8da' },
   bidInfo: { flex: 1 },
-  bidName: { fontSize: 13, fontWeight: '700', color: '#fff' },
-  bidPrice: { fontSize: 15, fontWeight: '800', color: '#a78bfa' },
-  bidMsg: { fontSize: 12, color: 'rgba(255,255,255,0.45)' },
+  bidName: { fontSize: 13, fontWeight: '700', color: '#182a1e' },
+  bidPrice: { fontSize: 15, fontWeight: '800', color: '#0c8a57' },
+  bidMsg: { fontSize: 12, color: '#73897a' },
   bidInput: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    color: '#fff',
+    borderColor: '#d4e8da',
+    color: '#182a1e',
     fontSize: 14,
     padding: 10,
   },
   bidSuccess: { alignItems: 'center', gap: 6, padding: 10 },
   bidSuccessEmoji: { fontSize: 32 },
-  bidSuccessText: { fontSize: 13, color: '#4ade80', fontWeight: '600' },
+  bidSuccessText: { fontSize: 13, color: '#16a34a', fontWeight: '600' },
   starRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 10 },
-  star: { fontSize: 28, color: 'rgba(255,255,255,0.2)' },
+  star: { fontSize: 28, color: '#d4e8da' },
   starFilled: { color: '#fbbf24' },
   chatMessages: { gap: 6, maxHeight: 200, overflow: 'scroll' },
   msgRow: { flexDirection: 'row' },
   msgRowMe: { justifyContent: 'flex-end' },
   bubble: { maxWidth: '75%', borderRadius: 12, padding: 8 },
-  bubbleMe: { backgroundColor: '#7c3aed' },
-  bubbleThem: { backgroundColor: '#1a1a2e' },
+  bubbleMe: { backgroundColor: '#0c8a57' },
+  bubbleThem: { backgroundColor: '#e6f4ec' },
   bubbleText: { fontSize: 13, color: '#fff' },
-  systemMsg: { textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+  systemMsg: { textAlign: 'center', fontSize: 11, color: '#73897a' },
   chatInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   chatTextInput: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#f0faf4',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    color: '#fff',
+    borderColor: '#d4e8da',
+    color: '#182a1e',
     fontSize: 13,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#0c8a57',
     alignItems: 'center',
     justifyContent: 'center',
   },

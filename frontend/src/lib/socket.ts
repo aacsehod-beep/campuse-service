@@ -58,3 +58,11 @@ export const emitTypingStop = (orderId: string) => {
 export const emitLocationUpdate = (orderId: string, coordinates: [number, number]) => {
   socket?.emit('update_location', { orderId, coordinates });
 };
+
+export const subscribeToFeedRemovals = (cb: (data: { orderId: string }) => void) => {
+  socket?.on('feed_order_removed', cb);
+};
+
+export const unsubscribeFromFeedRemovals = () => {
+  socket?.off('feed_order_removed');
+};

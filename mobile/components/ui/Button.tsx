@@ -80,17 +80,17 @@ const styles = StyleSheet.create({
 
   // Variants
   primary: {
-    backgroundColor: '#7c3aed',
-    shadowColor: '#7c3aed',
+    backgroundColor: '#0c8a57',
+    shadowColor: '#0c8a57',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
   secondary: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#e6f4ec',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: '#d4e8da',
   },
   danger: {
     backgroundColor: '#dc2626',
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   ghost: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: 'rgba(139,92,246,0.4)',
+    borderColor: '#0c8a57',
   },
 
   // Sizes
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   // Text
   text: { fontSize: 14, fontWeight: '700' },
   text_primary: { color: '#ffffff' },
-  text_secondary: { color: '#e5e7eb' },
+  text_secondary: { color: '#182a1e' },
   text_danger: { color: '#ffffff' },
-  text_ghost: { color: '#a78bfa' },
+  text_ghost: { color: '#0c8a57' },
 });

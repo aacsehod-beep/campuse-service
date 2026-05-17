@@ -81,7 +81,7 @@ export default function ProfileScreen() {
                   onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
                   style={styles.nameInput}
                   placeholder="Your name"
-                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  placeholderTextColor="#73897a"
                 />
               ) : (
                 <Text style={styles.profileName}>{user.name}</Text>
@@ -93,7 +93,7 @@ export default function ProfileScreen() {
               </View>
             </View>
             <TouchableOpacity onPress={() => setEditing(!editing)} style={styles.editBtn}>
-              <Ionicons name={editing ? 'close' : 'pencil'} size={18} color="rgba(255,255,255,0.6)" />
+              <Ionicons name={editing ? 'close' : 'pencil'} size={18} color="#73897a" />
             </TouchableOpacity>
           </View>
 
@@ -149,9 +149,9 @@ export default function ProfileScreen() {
                 <Text style={styles.walletBalance}>{formatCurrency(user.walletBalance)}</Text>
               </View>
               <View style={styles.walletIcon}>
-                <Ionicons name="wallet-outline" size={24} color="#a78bfa" />
+                <Ionicons name="wallet-outline" size={24} color="#0c8a57" />
               </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.3)" />
+              <Ionicons name="chevron-forward" size={20} color="#73897a" />
             </View>
           </Card>
         </TouchableOpacity>
@@ -182,6 +182,8 @@ export default function ProfileScreen() {
         <Card>
           {[
             { icon: 'bicycle-outline', label: 'Provider Mode', path: '/provider' },
+            { icon: 'briefcase-outline', label: 'My Services', path: '/provider' },
+            { icon: 'star-outline', label: 'Browse Services', path: '/(tabs)/feed' },
             { icon: 'notifications-outline', label: 'Notifications', path: '/notifications' },
           ].map((item) => (
             <TouchableOpacity
@@ -189,9 +191,9 @@ export default function ProfileScreen() {
               onPress={() => router.push(item.path as any)}
               style={styles.actionItem}
             >
-              <Ionicons name={item.icon as any} size={20} color="#a78bfa" />
+              <Ionicons name={item.icon as any} size={20} color="#0c8a57" />
               <Text style={styles.actionLabel}>{item.label}</Text>
-              <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.3)" style={{ marginLeft: 'auto' }} />
+              <Ionicons name="chevron-forward" size={16} color="#73897a" style={{ marginLeft: 'auto' }} />
             </TouchableOpacity>
           ))}
         </Card>
@@ -212,29 +214,29 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0d0d14' },
+  safe: { flex: 1, backgroundColor: '#f0faf4' },
   container: { padding: 16, gap: 14, paddingBottom: 40 },
   profileCard: { gap: 16 },
   profileTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
   profileInfo: { flex: 1, gap: 4 },
-  profileName: { fontSize: 18, fontWeight: '800', color: '#fff' },
+  profileName: { fontSize: 18, fontWeight: '800', color: '#182a1e' },
   nameInput: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#fff',
+    color: '#182a1e',
     borderBottomWidth: 1,
-    borderBottomColor: '#7c3aed',
+    borderBottomColor: '#0c8a57',
     paddingBottom: 2,
   },
-  profileEmail: { fontSize: 12, color: 'rgba(255,255,255,0.45)' },
+  profileEmail: { fontSize: 12, color: '#73897a' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   stars: { fontSize: 12, color: '#fbbf24' },
-  ratingText: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
+  ratingText: { fontSize: 12, color: '#73897a', fontWeight: '600' },
   editBtn: {
     width: 34,
     height: 34,
     borderRadius: 12,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#e6f4ec',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -243,36 +245,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: '#d4e8da',
   },
   badge: { flex: 1, alignItems: 'center', gap: 2 },
-  badgeValue: { fontSize: 16, fontWeight: '800', color: '#fff' },
-  badgeLabel: { fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: '600' },
-  badgeDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
+  badgeValue: { fontSize: 16, fontWeight: '800', color: '#182a1e' },
+  badgeLabel: { fontSize: 10, color: '#73897a', fontWeight: '600' },
+  badgeDivider: { width: 1, backgroundColor: '#d4e8da' },
   walletCard: { padding: 14 },
   walletRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  walletLabel: { fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '500' },
-  walletBalance: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  walletLabel: { fontSize: 11, color: '#73897a', fontWeight: '500' },
+  walletBalance: { fontSize: 22, fontWeight: '800', color: '#182a1e' },
   walletIcon: {
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: 'rgba(139,92,246,0.15)',
+    backgroundColor: '#e0f5ec',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 'auto',
   },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   statCard: { width: '47%', alignItems: 'center', gap: 4, padding: 14 },
-  statValue: { fontSize: 18, fontWeight: '800', color: '#a78bfa' },
-  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600' },
+  statValue: { fontSize: 18, fontWeight: '800', color: '#0c8a57' },
+  statLabel: { fontSize: 11, color: '#73897a', fontWeight: '600' },
   actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: '#d4e8da',
   },
-  actionLabel: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  actionLabel: { fontSize: 14, fontWeight: '600', color: '#182a1e' },
 });

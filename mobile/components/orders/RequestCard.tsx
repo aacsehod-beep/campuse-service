@@ -59,7 +59,7 @@ export function RequestCard({ order }: RequestCardProps) {
         <View style={styles.meta}>
           {order.budget ? (
             <View style={styles.metaItem}>
-              <Ionicons name="cash-outline" size={13} color="#a78bfa" />
+              <Ionicons name="cash-outline" size={13} color="#0c8a57" />
               <Text style={[styles.metaText, styles.priceText]}>
                 {formatCurrency(order.budget)}
               </Text>
@@ -69,14 +69,14 @@ export function RequestCard({ order }: RequestCardProps) {
           )}
           {order.location?.address && (
             <View style={styles.metaItem}>
-              <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.4)" />
+              <Ionicons name="location-outline" size={13} color="#73897a" />
               <Text style={styles.metaText} numberOfLines={1}>
                 {order.location.address.split(',')[0]}
               </Text>
             </View>
           )}
           <View style={[styles.metaItem, styles.metaRight]}>
-            <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.4)" />
+            <Ionicons name="time-outline" size={13} color="#73897a" />
             <Text style={styles.metaText}>{timeAgo(order.createdAt)}</Text>
           </View>
         </View>
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   headerLeft: { flex: 1, gap: 6 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  description: { fontSize: 14, fontWeight: '500', color: '#ffffff', lineHeight: 20 },
+  description: { fontSize: 14, fontWeight: '500', color: '#182a1e', lineHeight: 20 },
   categoryIcon: {
     width: 44,
     height: 44,
@@ -115,25 +115,25 @@ const styles = StyleSheet.create({
   meta: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaRight: { marginLeft: 'auto' },
-  metaText: { fontSize: 12, color: 'rgba(255,255,255,0.45)' },
-  priceText: { color: '#a78bfa', fontWeight: '700' },
-  openBid: { fontSize: 12, color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' },
+  metaText: { fontSize: 12, color: '#73897a' },
+  priceText: { color: '#0c8a57', fontWeight: '700' },
+  openBid: { fontSize: 12, color: '#73897a', fontStyle: 'italic' },
   requester: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: '#d4e8da',
   },
   avatar: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#4f46e5',
+    backgroundColor: '#0c8a57',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: { fontSize: 10, fontWeight: '700', color: '#fff' },
-  requesterName: { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
+  requesterName: { fontSize: 12, color: '#73897a' },
 });

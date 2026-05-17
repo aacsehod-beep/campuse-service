@@ -3,9 +3,9 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Order, CATEGORY_META, STATUS_META } from '@/types';
-import { formatCurrency, timeAgo, generateAvatarUrl } from '@/lib/utils';
+import { formatCurrency, timeAgo } from '@/lib/utils';
 import { MapPin, Clock, Zap, Users, Tag } from 'lucide-react';
-import Image from 'next/image';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -31,10 +31,10 @@ export default function RequestCard({ order, showStatus = false }: Props) {
           <div className="flex items-start gap-4">
             {/* Category icon */}
             <div className={cn(
-              'w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0',
+              'w-11 h-11 rounded-xl flex items-center justify-center shrink-0',
               meta.bg
             )}>
-              {meta.icon}
+              <meta.icon className={cn('w-5 h-5', meta.color)} />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -83,12 +83,10 @@ export default function RequestCard({ order, showStatus = false }: Props) {
                   {/* Author */}
                   {typeof order.userId !== 'string' && order.userId && (
                   <div className="flex items-center gap-1.5">
-                    <Image
-                      src={(order.userId as { avatar?: string; name: string }).avatar || generateAvatarUrl((order.userId as { name: string }).name)}
-                      alt={(order.userId as { name: string }).name}
-                      width={20}
-                      height={20}
-                      className="rounded-full"
+                    <UserAvatar
+                      name={(order.userId as { name: string }).name}
+                      avatar={(order.userId as { avatar?: string }).avatar}
+                      size={20}
                     />
                     <span className="text-xs text-muted-foreground">{(order.userId as { name: string }).name}</span>
                   </div>

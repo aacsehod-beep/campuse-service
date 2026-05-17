@@ -7,12 +7,6 @@ const generateToken = (id) => {
   });
 };
 
-const generateRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
-};
-
 const isAllowedDomain = (email) => {
   const allowedDomains = (process.env.ALLOWED_EMAIL_DOMAINS || '').split(',').map((d) => d.trim().toLowerCase());
   if (!allowedDomains.length || allowedDomains[0] === '') return true; // No restriction
@@ -99,13 +93,11 @@ exports.login = async (req, res) => {
     }
 
     const token = generateToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
 
     res.json({
       success: true,
       message: 'Logged in successfully',
       token,
-      refreshToken,
       user: {
         _id: user._id,
         name: user.name,
@@ -148,29 +140,5 @@ exports.updateFcmToken = async (req, res) => {
     res.json({ success: true, message: 'FCM token updated' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
-  }
-};
-
-// @route   POST /api/auth/refresh
-exports.refreshToken = async (req, res) => {
-  try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-      return res.status(400).json({ success: false, message: 'Refresh token required' });
-    }
-
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user || user.isBanned) {
-      return res.status(401).json({ success: false, message: 'Invalid refresh token' });
-    }
-
-    const newToken = generateToken(user._id);
-    const newRefreshToken = generateRefreshToken(user._id);
-
-    res.json({ success: true, token: newToken, refreshToken: newRefreshToken });
-  } catch (error) {
-    res.status(401).json({ success: false, message: 'Invalid or expired refresh token' });
   }
 };
