@@ -9,7 +9,11 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://campuse-service.onrender.com/api",
+        "EXPO_PUBLIC_SOCKET_URL": "https://campuse-service.onrender.com"
+      }
     },
     "production": {
       "autoIncrement": true
