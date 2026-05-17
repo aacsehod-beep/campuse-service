@@ -1,13 +1,20 @@
 import '../global.css';
+import React from 'react';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
 import { useSocket } from '@/hooks/useSocket';
+
+// On web, GestureHandlerRootView intercepts pointer events — use a plain View instead
+const RootWrapper = Platform.OS === 'web'
+  ? ({ children, style }: { children: React.ReactNode; style: object }) => <View style={style}>{children}</View>
+  : GestureHandlerRootView;
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,7 +35,7 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <RootWrapper style={{ flex: 1 }}>
       <ThemeProvider value={DefaultTheme}>
         <SocketInitializer />
         <Stack screenOptions={{ headerShown: false }}>
@@ -74,6 +81,6 @@ export default function RootLayout() {
         <StatusBar style="light" />
         <Toast />
       </ThemeProvider>
-    </GestureHandlerRootView>
+    </RootWrapper>
   );
 }

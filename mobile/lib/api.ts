@@ -1,7 +1,20 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://campuse-service.onrender.com/api';
+
+const isWeb = Platform.OS === 'web';
+
+const getToken = async (): Promise<string | null> => {
+  if (isWeb) return typeof localStorage !== 'undefined' ? localStorage.getItem('campushub_token') : null;
+  try { return await SecureStore.getItemAsync('campushub_token'); } catch { return null; }
+};
+
+const deleteToken = async () => {
+  if (isWeb) { if (typeof localStorage !== 'undefined') localStorage.removeItem('campushub_token'); return; }
+  await SecureStore.deleteItemAsync('campushub_token').catch(() => {});
+};
 
 const api = axios.create({
   baseURL: API_URL,
@@ -12,12 +25,12 @@ const api = axios.create({
 // Attach JWT token to every request
 api.interceptors.request.use(async (config) => {
   try {
-    const token = await SecureStore.getItemAsync('campushub_token');
+    const token = await getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
   } catch {
-    // SecureStore not available in this context
+    // Storage not available in this context
   }
   return config;
 });
@@ -27,7 +40,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await SecureStore.deleteItemAsync('campushub_token').catch(() => {});
+      await deleteToken();
     }
     return Promise.reject(error);
   }

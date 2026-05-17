@@ -58,6 +58,21 @@ export default function ProfileScreen() {
     setIsSaving(false);
   };
 
+  const handleToggleAvailability = async () => {
+    if (!user) return;
+    try {
+      const newVal = !user.isAvailable;
+      await usersAPI.toggleAvailability(newVal);
+      updateUser({ isAvailable: newVal });
+      Toast.show({
+        type: 'success',
+        text1: newVal ? "You're now available! 🟢" : "You're now unavailable",
+      });
+    } catch {
+      Toast.show({ type: 'error', text1: 'Failed to update availability' });
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -178,6 +193,31 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Availability toggle */}
+        <TouchableOpacity
+          onPress={handleToggleAvailability}
+          activeOpacity={0.8}
+          style={[
+            styles.availCard,
+            user.isAvailable && styles.availCardOn,
+          ]}
+        >
+          <View style={[styles.availIcon, user.isAvailable && styles.availIconOn]}>
+            <Ionicons name="flash" size={18} color={user.isAvailable ? '#fff' : '#73897a'} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.availTitle, user.isAvailable && styles.availTitleOn]}>
+              {user.isAvailable ? 'Available for Orders' : 'Go Online to Earn'}
+            </Text>
+            <Text style={styles.availSub}>
+              {user.isAvailable ? 'Tap to go offline' : 'Tap to start accepting requests'}
+            </Text>
+          </View>
+          <View style={[styles.toggleTrack, user.isAvailable && styles.toggleTrackOn]}>
+            <View style={[styles.toggleThumb, user.isAvailable && styles.toggleThumbOn]} />
+          </View>
+        </TouchableOpacity>
+
         {/* Actions */}
         <Card>
           {[
@@ -277,4 +317,50 @@ const styles = StyleSheet.create({
     borderBottomColor: '#d4e8da',
   },
   actionLabel: { fontSize: 14, fontWeight: '600', color: '#182a1e' },
+
+  // Availability toggle card
+  availCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#d4e8da',
+    padding: 14,
+  },
+  availCardOn: { backgroundColor: '#e0f5ec', borderColor: '#0c8a57' },
+  availIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#e6f4ec',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  availIconOn: { backgroundColor: '#0c8a57' },
+  availTitle: { fontSize: 14, fontWeight: '700', color: '#182a1e' },
+  availTitleOn: { color: '#0c8a57' },
+  availSub: { fontSize: 11, color: '#73897a', marginTop: 1 },
+  toggleTrack: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#d4e8da',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleTrackOn: { backgroundColor: '#0c8a57' },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleThumbOn: { alignSelf: 'flex-end' },
 });

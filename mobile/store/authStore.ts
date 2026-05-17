@@ -1,28 +1,43 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { User } from '@/types';
 import { authAPI } from '@/lib/api';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
 
+// On web, expo-secure-store is a no-op — fall back to localStorage
+const isWeb = Platform.OS === 'web';
+
+const storeGet = async (name: string): Promise<string | null> => {
+  if (isWeb) return typeof localStorage !== 'undefined' ? localStorage.getItem(name) : null;
+  return SecureStore.getItemAsync(name);
+};
+const storeSet = async (name: string, value: string): Promise<void> => {
+  if (isWeb) { if (typeof localStorage !== 'undefined') localStorage.setItem(name, value); return; }
+  await SecureStore.setItemAsync(name, value);
+};
+const storeDelete = async (name: string): Promise<void> => {
+  if (isWeb) { if (typeof localStorage !== 'undefined') localStorage.removeItem(name); return; }
+  await SecureStore.deleteItemAsync(name).catch(() => {});
+};
+
 // SecureStore adapter for Zustand persist
 const secureStorage = {
-  getItem: async (name: string) => {
-    return SecureStore.getItemAsync(name);
-  },
+  getItem: async (name: string) => storeGet(name),
   setItem: async (name: string, value: string) => {
-    await SecureStore.setItemAsync(name, value);
+    await storeSet(name, value);
     // Also store the raw token for the axios interceptor
     try {
       const parsed = JSON.parse(value);
       if (parsed?.state?.token) {
-        await SecureStore.setItemAsync('campushub_token', parsed.state.token);
+        await storeSet('campushub_token', parsed.state.token);
       }
     } catch {}
   },
   removeItem: async (name: string) => {
-    await SecureStore.deleteItemAsync(name);
-    await SecureStore.deleteItemAsync('campushub_token').catch(() => {});
+    await storeDelete(name);
+    await storeDelete('campushub_token');
   },
 };
 
@@ -51,7 +66,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const { data } = await authAPI.login({ email, password });
           const { token, user } = data;
-          await SecureStore.setItemAsync('campushub_token', token);
+          await storeSet('campushub_token', token);
           connectSocket(token);
           set({ user, token, isAuthenticated: true, isLoading: false });
         } catch (error) {
@@ -65,7 +80,7 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const { data } = await authAPI.register(formData);
           const { token, user } = data;
-          await SecureStore.setItemAsync('campushub_token', token);
+          await storeSet('campushub_token', token);
           connectSocket(token);
           set({ user, token, isAuthenticated: true, isLoading: false });
         } catch (error) {
@@ -75,7 +90,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
-        await SecureStore.deleteItemAsync('campushub_token').catch(() => {});
+        await storeDelete('campushub_token');
         disconnectSocket();
         set({ user: null, token: null, isAuthenticated: false });
       },

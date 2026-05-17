@@ -6,10 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Switch,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -36,6 +34,8 @@ const CATEGORIES: { id: OrderCategory; label: string; emoji: string }[] = [
   { id: 'marketplace', label: 'Marketplace', emoji: '🛒' },
   { id: 'others', label: 'Others', emoji: '📦' },
 ];
+
+const STEPS = ['Category', 'Details', 'Budget', 'Options'];
 
 export default function CreateScreen() {
   const router = useRouter();
@@ -103,14 +103,39 @@ export default function CreateScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {/* Sticky header with step progress */}
+        <View style={styles.headerBar}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={20} color="#182a1e" />
+          </TouchableOpacity>
+          <View style={styles.headerText}>
+            <Text style={styles.heading}>New Request</Text>
+            <Text style={styles.subheading}>Tell your campus what you need</Text>
+          </View>
+        </View>
+
+        {/* Step progress bar */}
+        <View style={styles.stepsRow}>
+          {STEPS.map((step, i) => {
+            const filled =
+              i === 0 ? true :
+              i === 1 ? form.description.trim().length > 0 :
+              i === 2 ? !!form.budget :
+              true;
+            return (
+              <View key={step} style={styles.stepItem}>
+                <View style={[styles.stepBar, filled && styles.stepBarFilled]} />
+                <Text style={[styles.stepLabel, filled && styles.stepLabelFilled]}>{step}</Text>
+              </View>
+            );
+          })}
+        </View>
+
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.heading}>Post a Request 🚀</Text>
-          <Text style={styles.subheading}>Tell campus what you need</Text>
-
           {/* Category selector */}
           <Card style={styles.section}>
             <Text style={styles.sectionLabel}>Category *</Text>
@@ -149,45 +174,69 @@ export default function CreateScreen() {
 
           {/* Pricing mode */}
           <Card style={styles.section}>
-            <View style={styles.row}>
-              <View style={styles.rowInfo}>
-                <Text style={styles.sectionLabel}>Bidding Mode</Text>
-                <Text style={styles.rowDesc}>Let providers offer their price</Text>
-              </View>
-              <Switch
-                value={form.mode === 'bidding'}
-                onValueChange={(v) => update('mode', v ? 'bidding' : 'fixed')}
-                thumbColor="#fff"
-                trackColor={{ false: '#d4e8da', true: '#0c8a57' }}
-              />
+            <Text style={styles.sectionLabel}>Pricing Mode</Text>
+            <View style={styles.modeRow}>
+              <TouchableOpacity
+                style={[styles.modeBtn, form.mode === 'fixed' && styles.modeBtnActive]}
+                onPress={() => update('mode', 'fixed')}
+              >
+                <Text style={[styles.modeBtnText, form.mode === 'fixed' && styles.modeBtnTextActive]}>
+                  Fixed Price
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modeBtn, form.mode === 'bidding' && styles.modeBtnActive]}
+                onPress={() => update('mode', 'bidding')}
+              >
+                <Text style={[styles.modeBtnText, form.mode === 'bidding' && styles.modeBtnTextActive]}>
+                  Open Bidding
+                </Text>
+              </TouchableOpacity>
             </View>
             {form.mode === 'fixed' && (
-              <Input
-                label="Budget (₹)"
-                value={form.budget}
-                onChangeText={(v) => update('budget', v)}
-                placeholder="Enter amount"
-                keyboardType="numeric"
-                leftIcon={<Ionicons name="cash-outline" size={18} color="#73897a" />}
-                containerStyle={{ marginTop: 12 }}
-              />
+              <>
+                {/* Quick preset chips */}
+                <View style={styles.presetsRow}>
+                  {['50', '100', '200', '500'].map((amt) => (
+                    <TouchableOpacity
+                      key={amt}
+                      style={[styles.presetChip, form.budget === amt && styles.presetChipActive]}
+                      onPress={() => update('budget', form.budget === amt ? '' : amt)}
+                    >
+                      <Text style={[styles.presetChipText, form.budget === amt && styles.presetChipTextActive]}>
+                        ₹{amt}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Input
+                  label="Budget (₹)"
+                  value={form.budget}
+                  onChangeText={(v) => update('budget', v)}
+                  placeholder="Enter amount"
+                  keyboardType="numeric"
+                  leftIcon={<Ionicons name="cash-outline" size={18} color="#73897a" />}
+                  containerStyle={{ marginTop: 4 }}
+                />
+              </>
             )}
           </Card>
 
           {/* Urgency */}
           <Card style={styles.section}>
-            <View style={styles.row}>
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => update('urgency', form.urgency === 'asap' ? 'normal' : 'asap')}
+              activeOpacity={0.7}
+            >
               <View style={styles.rowInfo}>
                 <Text style={styles.sectionLabel}>⚡ Urgent (ASAP)</Text>
                 <Text style={styles.rowDesc}>Get priority placement</Text>
               </View>
-              <Switch
-                value={form.urgency === 'asap'}
-                onValueChange={(v) => update('urgency', v ? 'asap' : 'normal')}
-                thumbColor="#fff"
-                trackColor={{ false: '#d4e8da', true: '#f97316' }}
-              />
-            </View>
+              <View style={[styles.toggleTrack, form.urgency === 'asap' && styles.toggleTrackOn]}>
+                <View style={[styles.toggleThumb, form.urgency === 'asap' && styles.toggleThumbOn]} />
+              </View>
+            </TouchableOpacity>
           </Card>
 
           {/* Location */}
@@ -232,10 +281,54 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { flex: 1 },
   container: { padding: 16, gap: 14, paddingBottom: 40 },
-  heading: { fontSize: 22, fontWeight: '800', color: '#182a1e' },
-  subheading: { fontSize: 13, color: '#73897a', marginTop: -8 },
+
+  // Header
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#d4e8da',
+    backgroundColor: '#f0faf4',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d4e8da',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerText: { flex: 1 },
+  heading: { fontSize: 17, fontWeight: '800', color: '#182a1e' },
+  subheading: { fontSize: 11, color: '#73897a', marginTop: 1 },
+
+  // Step progress
+  stepsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    backgroundColor: '#f0faf4',
+    borderBottomWidth: 1,
+    borderBottomColor: '#d4e8da',
+  },
+  stepItem: { flex: 1, alignItems: 'center', gap: 3 },
+  stepBar: { height: 3, width: '100%', borderRadius: 3, backgroundColor: '#d4e8da' },
+  stepBarFilled: { backgroundColor: '#0c8a57' },
+  stepLabel: { fontSize: 9, color: '#73897a', fontWeight: '600' },
+  stepLabelFilled: { color: '#0c8a57' },
+
+  // Sections
   section: { gap: 10 },
   sectionLabel: { fontSize: 13, fontWeight: '700', color: '#182a1e' },
+
+  // Categories
   catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   catItem: {
     flexDirection: 'row',
@@ -252,6 +345,8 @@ const styles = StyleSheet.create({
   catEmoji: { fontSize: 18 },
   catLabel: { fontSize: 12, fontWeight: '600', color: '#73897a' },
   catLabelActive: { color: '#0c8a57' },
+
+  // Description
   textarea: {
     backgroundColor: '#ffffff',
     borderRadius: 14,
@@ -263,9 +358,69 @@ const styles = StyleSheet.create({
     minHeight: 100,
   },
   charCount: { fontSize: 11, color: '#73897a', textAlign: 'right' },
+
+  // Pricing mode
+  modeRow: { flexDirection: 'row', gap: 10 },
+  modeBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#d4e8da',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+  },
+  modeBtnActive: {
+    backgroundColor: '#0c8a57',
+    borderColor: '#0c8a57',
+    shadowColor: '#0c8a57',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  modeBtnText: { fontSize: 13, fontWeight: '700', color: '#73897a' },
+  modeBtnTextActive: { color: '#ffffff' },
+
+  // Budget presets
+  presetsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  presetChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#d4e8da',
+  },
+  presetChipActive: { backgroundColor: '#e0f5ec', borderColor: '#0c8a57' },
+  presetChipText: { fontSize: 12, fontWeight: '600', color: '#73897a' },
+  presetChipTextActive: { color: '#0c8a57' },
+
+  // Misc
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rowInfo: { flex: 1, marginRight: 12 },
   rowDesc: { fontSize: 11, color: '#73897a', marginTop: 2 },
+  toggleTrack: {
+    width: 44,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#d4e8da',
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleTrackOn: { backgroundColor: '#f97316' },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleThumbOn: { alignSelf: 'flex-end' },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   locationText: { flex: 1, fontSize: 13, color: '#182a1e' },
   submitBtn: { marginTop: 6 },

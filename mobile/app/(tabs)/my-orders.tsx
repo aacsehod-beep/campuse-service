@@ -92,34 +92,25 @@ export default function MyOrdersScreen() {
         </View>
       </View>
 
-      {/* Summary strip */}
+      {/* Summary strip — doubles as the Active / Completed tab selector */}
       <View style={styles.summaryStrip}>
-        <View style={styles.summaryItem}>
-          <Ionicons name="time-outline" size={14} color="#3b82f6" />
-          <Text style={[styles.summaryValue, { color: '#3b82f6' }]}>{activeCount}</Text>
-          <Text style={styles.summaryLabel}>Active</Text>
-        </View>
+        <TouchableOpacity
+          style={[styles.summaryItem, tab === 'active' && styles.summaryItemActive]}
+          onPress={() => setTab('active')}
+        >
+          <Ionicons name="time-outline" size={14} color={tab === 'active' ? '#0c8a57' : '#3b82f6'} />
+          <Text style={[styles.summaryValue, { color: tab === 'active' ? '#0c8a57' : '#3b82f6' }]}>{activeCount}</Text>
+          <Text style={[styles.summaryLabel, tab === 'active' && styles.summaryLabelActive]}>Active</Text>
+        </TouchableOpacity>
         <View style={styles.statDivider} />
-        <View style={styles.summaryItem}>
-          <Ionicons name="checkmark-circle-outline" size={14} color="#0c8a57" />
+        <TouchableOpacity
+          style={[styles.summaryItem, tab === 'completed' && styles.summaryItemActive]}
+          onPress={() => setTab('completed')}
+        >
+          <Ionicons name="checkmark-circle-outline" size={14} color={tab === 'completed' ? '#0c8a57' : '#0c8a57'} />
           <Text style={[styles.summaryValue, { color: '#0c8a57' }]}>{doneCount}</Text>
-          <Text style={styles.summaryLabel}>Completed</Text>
-        </View>
-      </View>
-
-      {/* Status tabs */}
-      <View style={styles.tabs}>
-        {(['active', 'completed'] as StatusTab[]).map((t) => (
-          <TouchableOpacity
-            key={t}
-            onPress={() => setTab(t)}
-            style={[styles.tab, tab === t && styles.tabActive]}
-          >
-            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {t === 'active' ? `Active (${activeCount})` : `Completed (${doneCount})`}
-            </Text>
-          </TouchableOpacity>
-        ))}
+          <Text style={[styles.summaryLabel, tab === 'completed' && styles.summaryLabelActive]}>Completed</Text>
+        </TouchableOpacity>
       </View>
 
       {isLoading && sections.length === 0 ? (
@@ -149,6 +140,13 @@ export default function MyOrdersScreen() {
           renderItem={({ item: order }) => {
             const statusMeta = STATUS_META[order.status];
             const catMeta = CATEGORY_META[order.category];
+            const progressPct: Record<string, number> = {
+              CREATED: 10, BROADCASTED: 25, ACCEPTED: 50,
+              BID_SELECTED: 60, IN_PROGRESS: 80, DELIVERED: 90,
+              COMPLETED: 100, CANCELLED: 0,
+            };
+            const pct = progressPct[order.status] ?? 0;
+            const isActive = ACTIVE_STATUSES.includes(order.status);
             return (
               <TouchableOpacity onPress={() => router.push(`/orders/${order._id}`)} activeOpacity={0.85}>
                 <Card shadow>
@@ -168,6 +166,19 @@ export default function MyOrdersScreen() {
                     </View>
                     <Ionicons name="chevron-forward" size={18} color="#73897a" />
                   </View>
+                  {/* Progress bar for active orders */}
+                  {isActive && (
+                    <View style={styles.progressWrap}>
+                      <View style={styles.progressLabels}>
+                        <Text style={styles.progressLabel}>Posted</Text>
+                        <Text style={styles.progressLabel}>In Progress</Text>
+                        <Text style={styles.progressLabel}>Done</Text>
+                      </View>
+                      <View style={styles.progressTrack}>
+                        <View style={[styles.progressFill, { width: `${pct}%` as any }]} />
+                      </View>
+                    </View>
+                  )}
                 </Card>
               </TouchableOpacity>
             );
@@ -202,31 +213,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#d4e8da',
-    gap: 0,
   },
-  summaryItem: { flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1, justifyContent: 'center' },
+  summaryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  summaryItemActive: { backgroundColor: '#e0f5ec' },
   summaryValue: { fontSize: 15, fontWeight: '800' },
   summaryLabel: { fontSize: 11, color: '#73897a', fontWeight: '500' },
-  statDivider: { width: 1, height: 20, backgroundColor: '#d4e8da' },
-  tabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 4,
-  },
-  tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: 'transparent',
-  },
-  tabActive: { backgroundColor: '#e0f5ec' },
-  tabText: { fontSize: 13, fontWeight: '600', color: '#73897a' },
-  tabTextActive: { color: '#0c8a57' },
+  summaryLabelActive: { color: '#0c8a57', fontWeight: '700' },
+  statDivider: { width: 1, height: 24, backgroundColor: '#d4e8da' },
   sectionHeader: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -251,4 +256,18 @@ const styles = StyleSheet.create({
   orderMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   price: { fontSize: 13, fontWeight: '700', color: '#0c8a57' },
   orderTime: { fontSize: 11, color: '#73897a' },
+  progressWrap: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#e6f4ec' },
+  progressLabels: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
+  progressLabel: { fontSize: 9, color: '#73897a', fontWeight: '600' },
+  progressTrack: {
+    height: 4,
+    backgroundColor: '#d4e8da',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#0c8a57',
+    borderRadius: 2,
+  },
 });
