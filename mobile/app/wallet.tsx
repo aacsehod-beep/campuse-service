@@ -7,9 +7,12 @@ import {
   TouchableOpacity,
   TextInput,
   FlatList,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
+import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/store/authStore';
 import { walletAPI } from '@/lib/api';
 import { WalletTransaction } from '@/types';
@@ -51,11 +54,38 @@ export default function WalletScreen() {
       setBalance(data.balance);
       setAmount('');
       await loadWallet();
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Toast.show({ type: 'success', text1: `₹${parsed} added to wallet!` });
     } catch {
       Toast.show({ type: 'error', text1: 'Failed to add funds' });
     }
     setIsAdding(false);
+  };
+
+  const openUPI = (app: 'phonepe' | 'gpay' | 'paytm' | 'generic') => {
+    const parsed = parseFloat(amount);
+    if (!parsed || parsed < 10) {
+      Toast.show({ type: 'error', text1: 'Enter an amount first (min ₹10)' });
+      return;
+    }
+    const upiId = 'campushub@upi';
+    const name = encodeURIComponent('CampusHub Wallet');
+    const note = encodeURIComponent('CampusHub wallet top-up');
+    const baseUPI = `upi://pay?pa=${upiId}&pn=${name}&am=${parsed}&cu=INR&tn=${note}`;
+
+    const urls: Record<string, string> = {
+      phonepe: `phonepe://${baseUPI.slice(6)}`,
+      gpay: `tez://upi/pay?pa=${upiId}&pn=${name}&am=${parsed}&cu=INR`,
+      paytm: `paytmmp://${baseUPI.slice(6)}`,
+      generic: baseUPI,
+    };
+
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Linking.openURL(urls[app]).catch(() => {
+      Linking.openURL(baseUPI).catch(() =>
+        Toast.show({ type: 'error', text1: 'No UPI app installed' })
+      );
+    });
   };
 
   return (
@@ -94,12 +124,33 @@ export default function WalletScreen() {
           style={styles.amountInput}
         />
         <Button
-          title={isAdding ? 'Adding…' : 'Add Funds →'}
+          title={isAdding ? 'Adding…' : 'Add via CampusHub →'}
           onPress={handleAddFunds}
           loading={isAdding}
           fullWidth
           style={{ marginTop: 12 }}
         />
+        {/* UPI Pay buttons */}
+        <Text style={styles.upiLabel}>Pay directly via UPI</Text>
+        <View style={styles.upiRow}>
+          {[
+            { key: 'phonepe', label: 'PhonePe', icon: 'phone-portrait-outline', color: '#7c3aed' },
+            { key: 'gpay',    label: 'GPay',    icon: 'logo-google',            color: '#4285f4' },
+            { key: 'paytm',   label: 'Paytm',   icon: 'wallet-outline',         color: '#00baf2' },
+            { key: 'generic', label: 'Any UPI', icon: 'qr-code-outline',        color: '#0c8a57' },
+          ].map((app) => (
+            <TouchableOpacity
+              key={app.key}
+              onPress={() => openUPI(app.key as any)}
+              style={styles.upiBtn}
+            >
+              <View style={[styles.upiIconWrap, { backgroundColor: app.color + '18' }]}>
+                <Ionicons name={app.icon as any} size={20} color={app.color} />
+              </View>
+              <Text style={styles.upiAppLabel}>{app.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </Card>
 
       {/* Transactions */}
@@ -172,6 +223,11 @@ const styles = StyleSheet.create({
   quickBtnActive: { backgroundColor: '#e0f5ec', borderColor: '#0c8a57' },
   quickText: { fontSize: 13, fontWeight: '700', color: '#73897a' },
   quickTextActive: { color: '#0c8a57' },
+  upiLabel: { fontSize: 12, color: '#73897a', fontWeight: '600', marginTop: 16, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  upiRow: { flexDirection: 'row', gap: 10 },
+  upiBtn: { flex: 1, alignItems: 'center', gap: 6 },
+  upiIconWrap: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  upiAppLabel: { fontSize: 11, color: '#182a1e', fontWeight: '600' },
   amountInput: {
     backgroundColor: '#ffffff',
     borderRadius: 14,

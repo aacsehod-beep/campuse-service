@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
+import * as Location from 'expo-location';
 import { useOrderStore } from '@/store/orderStore';
 import { useAuthStore } from '@/store/authStore';
 import { messagesAPI, reviewsAPI } from '@/lib/api';
@@ -21,6 +23,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
+import { StarRating } from '@/components/ui/StarRating';
 import { getSocket, joinOrderRoom, leaveOrderRoom, emitTypingStart, emitTypingStop } from '@/lib/socket';
 import Toast from 'react-native-toast-message';
 import * as Haptics from 'expo-haptics';
@@ -40,6 +43,8 @@ export default function OrderDetailScreen() {
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewDone, setReviewDone] = useState(false);
+  const [countdown, setCountdown] = useState('');
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -66,6 +71,46 @@ export default function OrderDetailScreen() {
       socket?.off('new_bid');
     };
   }, [id]);
+
+  // Bid countdown — tick every second from order creation
+  useEffect(() => {
+    if (!activeOrder || !['CREATED', 'BROADCASTED'].includes(activeOrder.status)) return;
+    const tick = () => {
+      const created = new Date(activeOrder.createdAt).getTime();
+      const elapsed = Date.now() - created;
+      const WINDOW = 24 * 60 * 60 * 1000; // 24h bidding window
+      const remaining = WINDOW - elapsed;
+      if (remaining <= 0) { setCountdown('Bidding closed'); return; }
+      const h = Math.floor(remaining / 3600000);
+      const m = Math.floor((remaining % 3600000) / 60000);
+      const s = Math.floor((remaining % 60000) / 1000);
+      setCountdown(`${h}h ${m}m ${s}s`);
+    };
+    tick();
+    countdownRef.current = setInterval(tick, 1000);
+    return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
+  }, [activeOrder?._id, activeOrder?.status]);
+
+  const handleTrackOrder = async () => {
+    const coords = activeOrder?.location?.coordinates;
+    if (coords && coords[0] !== 0 && coords[1] !== 0) {
+      const [lng, lat] = coords;
+      const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      Linking.openURL(url).catch(() =>
+        Toast.show({ type: 'error', text1: 'Could not open Maps' })
+      );
+      return;
+    }
+    // Try to get user's current location as fallback
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Toast.show({ type: 'error', text1: 'Location permission denied' });
+      return;
+    }
+    const loc = await Location.getCurrentPositionAsync({});
+    const url = `https://www.google.com/maps/search/?api=1&query=${loc.coords.latitude},${loc.coords.longitude}`;
+    Linking.openURL(url);
+  };
 
   const loadMessages = async (orderId: string) => {
     try {
@@ -180,7 +225,7 @@ export default function OrderDetailScreen() {
       <Card shadow style={[styles.statusBanner, { borderLeftWidth: 3, borderLeftColor: statusMeta.color }]}>
         <View style={styles.statusTop}>
           <View style={[styles.catIcon, { backgroundColor: catMeta.bg }]}>
-            <Text style={{ fontSize: 22 }}>{catMeta.icon}</Text>
+            <Ionicons name={catMeta.icon as any} size={22} color={catMeta.color} />
           </View>
           <View style={styles.statusInfo}>
             <View style={styles.statusBadges}>
@@ -209,6 +254,20 @@ export default function OrderDetailScreen() {
           </View>
         )}
         <Text style={styles.posted}>Posted {timeAgo(order.createdAt)}</Text>
+        {/* Bid countdown */}
+        {order.mode === 'bidding' && ['CREATED', 'BROADCASTED'].includes(order.status) && countdown ? (
+          <View style={styles.countdownRow}>
+            <Ionicons name="timer-outline" size={14} color="#f97316" />
+            <Text style={styles.countdownText}>Bidding closes in {countdown}</Text>
+          </View>
+        ) : null}
+        {/* Track order button */}
+        {['ACCEPTED', 'BID_SELECTED', 'IN_PROGRESS'].includes(order.status) && (
+          <TouchableOpacity onPress={handleTrackOrder} style={styles.trackBtn}>
+            <Ionicons name="navigate-outline" size={14} color="#fff" />
+            <Text style={styles.trackBtnText}>Track Order</Text>
+          </TouchableOpacity>
+        )}
       </Card>
 
       {/* Parties */}
@@ -408,13 +467,7 @@ export default function OrderDetailScreen() {
       {order.status === 'COMPLETED' && (isOwner || isProvider) && !reviewDone && (
         <Card shadow>
           <Text style={styles.sectionTitle}>Leave a Review</Text>
-          <View style={styles.starRow}>
-            {[1, 2, 3, 4, 5].map((s) => (
-              <TouchableOpacity key={s} onPress={() => setRating(s)}>
-                <Text style={[styles.star, s <= rating && styles.starFilled]}>★</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <StarRating rating={rating} onRate={setRating} size={38} />
           <TextInput
             value={reviewComment}
             onChangeText={setReviewComment}
@@ -481,6 +534,20 @@ const styles = StyleSheet.create({
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   locationText: { fontSize: 12, color: '#73897a', flex: 1 },
   posted: { fontSize: 11, color: '#73897a' },
+  countdownRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  countdownText: { fontSize: 12, color: '#f97316', fontWeight: '600' },
+  trackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#0c8a57',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  trackBtnText: { fontSize: 12, color: '#fff', fontWeight: '700' },
   row2: { flexDirection: 'row', gap: 10 },
   partyCard: { flex: 1, alignItems: 'center', gap: 6, padding: 14 },
   partyRole: { fontSize: 10, fontWeight: '700', color: '#73897a', textTransform: 'uppercase' },
@@ -521,9 +588,6 @@ const styles = StyleSheet.create({
   bidSuccess: { alignItems: 'center', gap: 6, padding: 10 },
   bidSuccessEmoji: { fontSize: 32 },
   bidSuccessText: { fontSize: 13, color: '#16a34a', fontWeight: '600' },
-  starRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 10 },
-  star: { fontSize: 28, color: '#d4e8da' },
-  starFilled: { color: '#fbbf24' },
   chatMessages: { gap: 6, maxHeight: 200, overflow: 'scroll' },
   msgRow: { flexDirection: 'row' },
   msgRowMe: { justifyContent: 'flex-end' },

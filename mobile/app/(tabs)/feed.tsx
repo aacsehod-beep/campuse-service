@@ -18,6 +18,7 @@ import { useAuthStore } from '@/store/authStore';
 import { ordersAPI } from '@/lib/api';
 import { OrderCategory, Order } from '@/types';
 import { RequestCard } from '@/components/orders/RequestCard';
+import { FeedSkeleton } from '@/components/ui/Skeleton';
 
 const CATEGORIES: { id: OrderCategory | ''; label: string; icon: string }[] = [
   { id: '', label: 'All', icon: 'apps-outline' },
@@ -259,10 +260,7 @@ export default function FeedScreen() {
               <Text style={styles.emptyText}>Be the first to post a request on campus</Text>
             </View>
           ) : (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator color="#0c8a57" size="large" />
-              <Text style={styles.loadingText}>Loading requests…</Text>
-            </View>
+            <FeedSkeleton />
           )
         }
         ListFooterComponent={

@@ -10,6 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
 import { useSocket } from '@/hooks/useSocket';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 // On web, GestureHandlerRootView intercepts pointer events — use a plain View instead
 const RootWrapper = Platform.OS === 'web'
@@ -18,8 +19,9 @@ const RootWrapper = Platform.OS === 'web'
 
 SplashScreen.preventAutoHideAsync();
 
-function SocketInitializer() {
+function AppInitializer() {
   useSocket();
+  usePushNotifications();
   return null;
 }
 
@@ -37,7 +39,7 @@ export default function RootLayout() {
   return (
     <RootWrapper style={{ flex: 1 }}>
       <ThemeProvider value={DefaultTheme}>
-        <SocketInitializer />
+        <AppInitializer />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />

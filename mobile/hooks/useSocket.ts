@@ -5,6 +5,7 @@ import { useOrderStore } from '@/store/orderStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { Order, Bid, Message } from '@/types';
 import Toast from 'react-native-toast-message';
+import { scheduleLocalNotification } from '@/hooks/usePushNotifications';
 
 export function useSocket() {
   const { token, user } = useAuthStore();
@@ -33,6 +34,11 @@ export function useSocket() {
           text1: '📦 New Request',
           text2: order.description.slice(0, 60),
         });
+        scheduleLocalNotification(
+          `New ${order.category} request`,
+          order.description.slice(0, 80),
+          { orderId: order._id }
+        );
       }
     });
 
@@ -51,6 +57,11 @@ export function useSocket() {
           text1: '💰 New Bid',
           text2: `₹${bid.price} from ${bid.userId.name}`,
         });
+        scheduleLocalNotification(
+          'New bid received',
+          `${bid.userId.name} bid ₹${bid.price}`,
+          { orderId }
+        );
       }
     });
 
@@ -69,6 +80,11 @@ export function useSocket() {
           text1: '🎉 Bid Accepted!',
           text2: `Your bid of ₹${bid.price} was selected`,
         });
+        scheduleLocalNotification(
+          'Your bid was accepted! 🎉',
+          `Your bid of ₹${bid.price} was selected`,
+          { orderId: order._id }
+        );
       }
     });
 

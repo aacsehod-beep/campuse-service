@@ -11,11 +11,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 import { ordersAPI } from '@/lib/api';
 import { Order, STATUS_META, CATEGORY_META } from '@/types';
 import { timeAgo, formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
+import { OrderListSkeleton } from '@/components/ui/Skeleton';
 
 type Role = 'customer' | 'provider';
 type StatusTab = 'active' | 'completed';
@@ -81,7 +84,7 @@ export default function MyOrdersScreen() {
           {(['customer', 'provider'] as Role[]).map((r) => (
             <TouchableOpacity
               key={r}
-              onPress={() => setRole(r)}
+              onPress={() => { setRole(r); if (Platform.OS !== 'web') Haptics.selectionAsync(); }}
               style={[styles.toggleBtn, role === r && styles.toggleActive]}
             >
               <Text style={[styles.toggleText, role === r && styles.toggleTextActive]}>
@@ -96,7 +99,7 @@ export default function MyOrdersScreen() {
       <View style={styles.summaryStrip}>
         <TouchableOpacity
           style={[styles.summaryItem, tab === 'active' && styles.summaryItemActive]}
-          onPress={() => setTab('active')}
+          onPress={() => { setTab('active'); if (Platform.OS !== 'web') Haptics.selectionAsync(); }}}
         >
           <Ionicons name="time-outline" size={14} color={tab === 'active' ? '#0c8a57' : '#3b82f6'} />
           <Text style={[styles.summaryValue, { color: tab === 'active' ? '#0c8a57' : '#3b82f6' }]}>{activeCount}</Text>
@@ -105,7 +108,7 @@ export default function MyOrdersScreen() {
         <View style={styles.statDivider} />
         <TouchableOpacity
           style={[styles.summaryItem, tab === 'completed' && styles.summaryItemActive]}
-          onPress={() => setTab('completed')}
+          onPress={() => { setTab('completed'); if (Platform.OS !== 'web') Haptics.selectionAsync(); }}}
         >
           <Ionicons name="checkmark-circle-outline" size={14} color={tab === 'completed' ? '#0c8a57' : '#0c8a57'} />
           <Text style={[styles.summaryValue, { color: '#0c8a57' }]}>{doneCount}</Text>
@@ -114,7 +117,7 @@ export default function MyOrdersScreen() {
       </View>
 
       {isLoading && sections.length === 0 ? (
-        <ActivityIndicator color="#0c8a57" style={{ marginTop: 60 }} />
+        <OrderListSkeleton />
       ) : sections.length === 0 ? (
       <View style={styles.empty}>
           <View style={styles.emptyIconWrap}>

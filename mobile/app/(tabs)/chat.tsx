@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,18 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/store/authStore';
 import { ordersAPI, messagesAPI } from '@/lib/api';
 import { Order, Message } from '@/types';
 import { timeAgo } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
+import { ChatListSkeleton } from '@/components/ui/Skeleton';
 import { getSocket, joinOrderRoom, leaveOrderRoom, emitTypingStart, emitTypingStop } from '@/lib/socket';
 
 type View = 'list' | 'thread';
@@ -30,6 +33,7 @@ export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [typing, setTyping] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     loadActiveOrders();
@@ -91,8 +95,30 @@ export default function ChatScreen() {
     const content = input.trim();
     setInput('');
     emitTypingStop(selectedOrder._id);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await messagesAPI.send(selectedOrder._id, content);
+    } catch {}
+  };
+
+  const pickAndSendImage = async () => {
+    if (!selectedOrder) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.5,
+      base64: true,
+      allowsEditing: true,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    const ext = asset.uri.split('.').pop()?.toLowerCase() || 'jpeg';
+    const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+    const content = `data:${mime};base64,${asset.base64}`;
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      await messagesAPI.sendMessage(selectedOrder._id, { content, type: 'image' });
     } catch {}
   };
 
@@ -136,6 +162,23 @@ export default function ChatScreen() {
                   <Text style={styles.systemMsg}>{msg.content}</Text>
                 );
               }
+              if (msg.type === ('image' as any)) {
+                return (
+                  <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
+                    {!isMe && <Avatar name={msg.senderId.name} size={28} />}
+                    <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem, { padding: 4 }]}>
+                      <Image
+                        source={{ uri: msg.content }}
+                        style={styles.msgImage}
+                        resizeMode="cover"
+                      />
+                      <Text style={[styles.bubbleTime, !isMe && styles.bubbleTimeThem]}>
+                        {timeAgo(msg.createdAt)}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              }
               return (
                 <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
                   {!isMe && (
@@ -160,6 +203,9 @@ export default function ChatScreen() {
 
           {/* Input */}
           <View style={styles.inputRow}>
+            <TouchableOpacity onPress={pickAndSendImage} style={styles.imageBtn}>
+              <Ionicons name="image-outline" size={22} color="#73897a" />
+            </TouchableOpacity>
             <TextInput
               value={input}
               onChangeText={(v) => {
@@ -189,10 +235,12 @@ export default function ChatScreen() {
         <Text style={styles.listTitle}>Messages</Text>
       </View>
       {isLoading ? (
-        <ActivityIndicator color="#8b5cf6" style={{ marginTop: 60 }} />
+        <ChatListSkeleton />
       ) : activeOrders.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>💬</Text>
+          <View style={styles.emptyIconWrap}>
+            <Ionicons name="chatbubbles-outline" size={40} color="#d4e8da" />
+          </View>
           <Text style={styles.emptyTitle}>No conversations yet</Text>
           <Text style={styles.emptyText}>Accept or post an order to start chatting</Text>
         </View>
@@ -237,7 +285,15 @@ const styles = StyleSheet.create({
   },
   listTitle: { fontSize: 20, fontWeight: '800', color: '#182a1e' },
   empty: { alignItems: 'center', paddingTop: 80, gap: 8 },
-  emptyIcon: { fontSize: 48 },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#e6f4ec',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#182a1e' },
   emptyText: { fontSize: 13, color: '#73897a', textAlign: 'center' },
   convItem: {
@@ -312,6 +368,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     maxHeight: 100,
+  },
+  imageBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#e6f4ec',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  msgImage: {
+    width: 180,
+    height: 180,
+    borderRadius: 12,
   },
   sendBtn: {
     width: 44,
