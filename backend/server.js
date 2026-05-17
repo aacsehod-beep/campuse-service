@@ -43,7 +43,7 @@ startOrderExpiryScheduler(io);
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL === '*' ? true : (process.env.CLIENT_URL || 'http://localhost:3000'),
   credentials: true,
 }));
 
@@ -77,6 +77,11 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
+});
+
+// Root route — needed for Render health checks
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'CampusHub API' });
 });
 
 // 404 handler
