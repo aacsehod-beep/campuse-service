@@ -241,6 +241,7 @@ export default function OrderDetailScreen() {
   const isProvider = user?._id === order.assignedTo?._id;
   const statusMeta = STATUS_META[order.status];
   const catMeta = CATEGORY_META[order.category];
+  const isChatLocked = order.status === 'COMPLETED' || order.status === 'CANCELLED';
   const myBidFromOrder = (order.bids || []).find((b) => {
     const bidUserId = typeof b.userId === 'string' ? b.userId : b.userId?._id;
     return bidUserId === user?._id;
@@ -525,7 +526,21 @@ export default function OrderDetailScreen() {
       {/* Chat */}
       {(isOwner || isProvider) && order.assignedTo && (
         <Card shadow>
-          <Text style={styles.sectionTitle}>Chat</Text>
+          <View style={styles.chatHeaderRow}>
+            <Text style={styles.sectionTitle}>Chat</Text>
+            {isChatLocked && (
+              <View style={styles.chatLockedChip}>
+                <Ionicons
+                  name={order.status === 'COMPLETED' ? 'checkmark-circle-outline' : 'close-circle-outline'}
+                  size={13}
+                  color={order.status === 'COMPLETED' ? '#16a34a' : '#ef4444'}
+                />
+                <Text style={styles.chatLockedChipText}>
+                  {order.status === 'COMPLETED' ? 'Order Completed' : 'Order Cancelled'}
+                </Text>
+              </View>
+            )}
+          </View>
           <View style={styles.chatMessages}>
             {messages.slice(-10).map((msg) => {
               const isMe = msg.senderId._id === user?._id;
@@ -543,16 +558,21 @@ export default function OrderDetailScreen() {
               );
             })}
           </View>
-          <View style={styles.chatInputRow}>
+          <View style={[styles.chatInputRow, isChatLocked && styles.chatInputRowDisabled]}>
             <TextInput
               value={chatInput}
               onChangeText={setChatInput}
-              placeholder="Message…"
+              placeholder={isChatLocked ? 'Chat is closed for this order' : 'Message…'}
               placeholderTextColor="#73897a"
-              style={styles.chatTextInput}
+              style={[styles.chatTextInput, isChatLocked && styles.chatTextInputDisabled]}
+              editable={!isChatLocked}
             />
-            <TouchableOpacity onPress={sendMessage} style={styles.sendBtn}>
-              <Ionicons name="send" size={16} color="#fff" />
+            <TouchableOpacity
+              onPress={isChatLocked ? undefined : sendMessage}
+              style={[styles.sendBtn, isChatLocked && styles.sendBtnDisabled]}
+              disabled={isChatLocked}
+            >
+              <Ionicons name="send" size={16} color={isChatLocked ? '#9bb2a4' : '#fff'} />
             </TouchableOpacity>
           </View>
         </Card>
@@ -650,6 +670,19 @@ const styles = StyleSheet.create({
   myBidAmount: { fontSize: 20, fontWeight: '800', color: '#0c8a57' },
   myBidStatus: { fontSize: 13, fontWeight: '600', color: '#3a6d4f' },
   myBidMsg: { fontSize: 12, color: '#73897a' },
+  chatHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  chatLockedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#f3faf5',
+    borderWidth: 1,
+    borderColor: '#d4e8da',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  chatLockedChipText: { fontSize: 11, fontWeight: '700', color: '#3a6d4f' },
   chatMessages: { gap: 6, maxHeight: 200, overflow: 'scroll' },
   msgRow: { flexDirection: 'row' },
   msgRowMe: { justifyContent: 'flex-end' },
@@ -660,6 +693,7 @@ const styles = StyleSheet.create({
   bubbleTextThem: { color: '#182a1e' },
   systemMsg: { textAlign: 'center', fontSize: 11, color: '#73897a' },
   chatInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  chatInputRowDisabled: { opacity: 0.8 },
   chatTextInput: {
     flex: 1,
     backgroundColor: '#f0faf4',
@@ -671,6 +705,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  chatTextInputDisabled: { backgroundColor: '#edf5ef' },
   sendBtn: {
     width: 36,
     height: 36,
@@ -679,4 +714,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  sendBtnDisabled: { backgroundColor: '#d7e5dc' },
 });
