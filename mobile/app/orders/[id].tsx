@@ -151,6 +151,11 @@ export default function OrderDetailScreen() {
     try {
       await updateOrderStatus(id, status);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (status === 'COMPLETED') {
+        Toast.show({ type: 'success', text1: 'Order completed successfully!' });
+        router.replace('/(tabs)/feed' as any);
+        return;
+      }
       Toast.show({ type: 'success', text1: `Status updated to ${status}` });
     } catch {
       Toast.show({ type: 'error', text1: 'Failed to update status' });
@@ -532,7 +537,7 @@ export default function OrderDetailScreen() {
               return (
                 <View key={msg._id} style={[styles.msgRow, isMe && styles.msgRowMe]}>
                   <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-                    <Text style={styles.bubbleText}>{msg.content}</Text>
+                    <Text style={[styles.bubbleText, !isMe && styles.bubbleTextThem]}>{msg.content}</Text>
                   </View>
                 </View>
               );
@@ -551,6 +556,15 @@ export default function OrderDetailScreen() {
             </TouchableOpacity>
           </View>
         </Card>
+      )}
+
+      {(order.status === 'COMPLETED' || order.status === 'CANCELLED') && (
+        <Button
+          title="Back To Home"
+          onPress={() => router.replace('/(tabs)/feed' as any)}
+          fullWidth
+          variant="outline"
+        />
       )}
     </ScrollView>
   );
@@ -643,6 +657,7 @@ const styles = StyleSheet.create({
   bubbleMe: { backgroundColor: '#0c8a57' },
   bubbleThem: { backgroundColor: '#e6f4ec' },
   bubbleText: { fontSize: 13, color: '#fff' },
+  bubbleTextThem: { color: '#182a1e' },
   systemMsg: { textAlign: 'center', fontSize: 11, color: '#73897a' },
   chatInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   chatTextInput: {
