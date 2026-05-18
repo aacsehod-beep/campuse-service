@@ -9,6 +9,7 @@ const { Server } = require('socket.io');
 const connectDB = require('./src/config/db');
 const { initializeSocket } = require('./src/socket/socketHandler');
 const rateLimiter = require('./src/middleware/rateLimiter');
+const { startOrderExpiryScheduler } = require('./src/services/orderExpiryScheduler');
 
 const authRoutes = require('./src/routes/auth');
 const orderRoutes = require('./src/routes/orders');
@@ -17,6 +18,7 @@ const userRoutes = require('./src/routes/users');
 const reviewRoutes = require('./src/routes/reviews');
 const walletRoutes = require('./src/routes/wallet');
 const messageRoutes = require('./src/routes/messages');
+const serviceRoutes = require('./src/routes/services');
 
 const app = express();
 const server = http.createServer(app);
@@ -35,10 +37,24 @@ const io = new Server(server, {
 
 initializeSocket(io);
 
+// Start scheduled jobs
+startOrderExpiryScheduler(io);
+
 // Security middleware
 app.use(helmet());
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:3000',
+  'http://localhost:8081',
+  'http://localhost:3000',
+  'http://localhost:19006',
+];
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL === '*' ? true : function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
@@ -63,6 +79,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/services', serviceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -71,6 +88,11 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
+});
+
+// Root route — needed for Render health checks
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'CampusHub API' });
 });
 
 // 404 handler

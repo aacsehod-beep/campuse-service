@@ -44,7 +44,7 @@ exports.placeBid = async (req, res) => {
       estimatedTime: estimatedTime ? parseInt(estimatedTime) : undefined,
     });
 
-    await bid.populate('userId', 'name avatar rating completedOrders reliabilityScore');
+    await bid.populate('userId', 'name avatar rating completedOrders reliabilityScore totalRatings isVerified');
 
     const io = req.app.get('io');
     io.to(`order_${orderId}`).emit('new_bid', { bid, orderId });
@@ -70,9 +70,23 @@ exports.placeBid = async (req, res) => {
 // @route   GET /api/bids/:orderId
 exports.getBids = async (req, res) => {
   try {
-    const bids = await Bid.find({ orderId: req.params.orderId })
-      .populate('userId', 'name avatar rating completedOrders reliabilityScore hostel')
-      .sort({ price: 1, createdAt: 1 });
+    const order = await Order.findById(req.params.orderId).select('userId');
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    const isOwner = order.userId.toString() === req.user._id.toString();
+
+    let bids;
+    if (isOwner) {
+      // Order owner sees all bids with full details
+      bids = await Bid.find({ orderId: req.params.orderId })
+        .populate('userId', 'name avatar rating completedOrders reliabilityScore hostel totalRatings isVerified')
+        .sort({ price: 1, createdAt: 1 });
+    } else {
+      // Providers only see their own bid
+      bids = await Bid.find({ orderId: req.params.orderId, userId: req.user._id })
+        .populate('userId', 'name avatar rating completedOrders reliabilityScore hostel totalRatings isVerified')
+        .sort({ createdAt: 1 });
+    }
 
     res.json({ success: true, bids });
   } catch (error) {
@@ -125,6 +139,8 @@ exports.acceptBid = async (req, res) => {
 
     const io = req.app.get('io');
     io.to(`order_${orderId}`).emit('bid_accepted', { bid, order, orderId });
+    // Remove from public provider feed once customer selects a bidder
+    io.emit('feed_order_removed', { orderId: order._id });
 
     // Notify winning bidder
     const provider = await User.findById(bid.userId).select('+fcmToken');

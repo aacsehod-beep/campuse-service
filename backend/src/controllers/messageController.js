@@ -9,6 +9,13 @@ exports.getMessages = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
+    if (['COMPLETED', 'CANCELLED'].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Chat is closed for completed or cancelled orders',
+      });
+    }
+
     const isParticipant =
       order.userId.toString() === req.user._id.toString() ||
       order.assignedTo?.toString() === req.user._id.toString() ||

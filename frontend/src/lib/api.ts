@@ -73,6 +73,9 @@ export const usersAPI = {
   getNearbyProviders: (lat: number, lng: number, radius?: number) =>
     api.get('/users/providers/nearby', { params: { lat, lng, radius } }),
   getAllUsers: (params?: Record<string, string | number>) => api.get('/users', { params }),
+  blockUser: (userId: string) => api.post(`/users/${userId}/block`, {}),
+  unblockUser: (userId: string) => api.delete(`/users/${userId}/block`),
+  getBlockedUsers: () => api.get('/users/me/blocked'),
 };
 
 // Reviews
@@ -99,6 +102,22 @@ export const messagesAPI = {
   send: (orderId: string, content: string) => api.post(`/messages/${orderId}`, { content }),
   sendMessage: (orderId: string, data: { content: string; type?: string }) =>
     api.post(`/messages/${orderId}`, data),
+};
+
+// Services (Skill Listings)
+export const servicesAPI = {
+  getAll: (params?: Record<string, string | number>) => api.get('/services', { params }),
+  getMine: () => api.get('/services/mine'),
+  getByUser: (userId: string) => api.get(`/services/user/${userId}`),
+  getById: (id: string) => api.get(`/services/${id}`),
+  create: (data: Record<string, unknown>) => api.post('/services', data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/services/${id}`, data),
+  delete: (id: string) => api.delete(`/services/${id}`),
+};
+
+// Public profile
+export const publicProfileAPI = {
+  get: (userId: string) => api.get(`/users/${userId}/public`),
 };
 
 export default api;

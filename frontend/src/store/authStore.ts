@@ -9,6 +9,8 @@ interface AuthStore {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  _hasHydrated: boolean;
+  setHasHydrated: (v: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (data: { name: string; email: string; password: string; hostel?: string; phone?: string }) => Promise<void>;
   logout: () => void;
@@ -23,6 +25,8 @@ export const useAuthStore = create<AuthStore>()(
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      _hasHydrated: false,
+      setHasHydrated: (v) => set({ _hasHydrated: v }),
 
       login: async (email, password) => {
         set({ isLoading: true });
@@ -77,6 +81,9 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'campushub_auth',
       partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

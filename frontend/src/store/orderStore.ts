@@ -17,6 +17,7 @@ interface OrderStore {
   acceptOrder: (id: string) => Promise<void>;
   addNewOrder: (order: Order) => void;
   updateOrderInList: (order: Order) => void;
+  removeOrderFromFeed: (orderId: string) => void;
   setFilters: (filters: Partial<{ category?: string; urgency?: string; status?: string }>) => void;
   setActiveOrder: (order: Order | null) => void;
 
@@ -99,6 +100,12 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     }));
   },
 
+  removeOrderFromFeed: (orderId) => {
+    set((state) => ({
+      orders: state.orders.filter((o) => o._id !== orderId),
+    }));
+  },
+
   setFilters: (filters) => {
     set({ filters: { ...get().filters, ...filters }, page: 1, orders: [] });
   },
@@ -123,7 +130,12 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
     set((state) => ({
       activeOrder:
         state.activeOrder?._id === orderId
-          ? { ...state.activeOrder, bids: [...(state.activeOrder.bids || []), bid] }
+          ? {
+              ...state.activeOrder,
+              bids: state.activeOrder.bids?.some((b) => b._id === bid._id)
+                ? state.activeOrder.bids
+                : [...(state.activeOrder.bids || []), bid],
+            }
           : state.activeOrder,
     }));
   },

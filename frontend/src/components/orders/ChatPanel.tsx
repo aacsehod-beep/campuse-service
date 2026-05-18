@@ -5,17 +5,21 @@ import { messagesAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { getSocket } from '@/lib/socket';
 import { Message } from '@/types';
-import { cn, generateAvatarUrl, timeAgo } from '@/lib/utils';
-import { Send, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+import { cn, timeAgo } from '@/lib/utils';
+import UserAvatar from '@/components/ui/UserAvatar';
+import { Send, Loader2, LockKeyhole } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const CLOSED_STATUSES = ['COMPLETED', 'CANCELLED'];
 
 interface Props {
   orderId: string;
+  orderStatus?: string;
 }
 
-export default function ChatPanel({ orderId }: Props) {
+export default function ChatPanel({ orderId, orderStatus }: Props) {
   const { user } = useAuthStore();
+  const isClosed = orderStatus ? CLOSED_STATUSES.includes(orderStatus) : false;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -110,15 +114,12 @@ export default function ChatPanel({ orderId }: Props) {
             }
             const isMe = msg.senderId?._id === user?._id;
             const senderName = msg.senderId?.name || 'User';
-            const senderAvatar = msg.senderId?.avatar || generateAvatarUrl(senderName);
             return (
               <div key={msg._id} className={cn('flex items-end gap-2', isMe && 'flex-row-reverse')}>
-                <Image
-                  src={senderAvatar}
-                  alt={senderName}
-                  width={28}
-                  height={28}
-                  className="rounded-full shrink-0"
+                <UserAvatar
+                  name={senderName}
+                  avatar={msg.senderId?.avatar ?? undefined}
+                  size={28}
                 />
                 <div className={cn('max-w-[70%] space-y-0.5', isMe && 'items-end')}>
                   <div className={cn(
@@ -154,23 +155,32 @@ export default function ChatPanel({ orderId }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <form onSubmit={sendMessage} className="px-4 py-3 border-t border-border flex gap-2">
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => handleTyping(e.target.value)}
-          placeholder="Type a message…"
-          className="flex-1 px-3 py-2 rounded-xl bg-secondary/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm transition-all"
-        />
-        <button
-          type="submit"
-          disabled={!text.trim() || isSending}
-          className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:bg-primary/90 transition-all shrink-0"
-        >
-          {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        </button>
-      </form>
+      {/* Input / Closed banner */}
+      {isClosed ? (
+        <div className="px-4 py-3 border-t border-border flex items-center justify-center gap-2 bg-[hsl(var(--surface-2))] rounded-b-2xl">
+          <LockKeyhole className="w-3.5 h-3.5 text-[hsl(var(--foreground-muted))]" />
+          <p className="text-xs text-[hsl(var(--foreground-muted))]">
+            Chat is closed — order {orderStatus?.toLowerCase()}
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={sendMessage} className="px-4 py-3 border-t border-border flex gap-2">
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => handleTyping(e.target.value)}
+            placeholder="Type a message…"
+            className="flex-1 px-3 py-2 rounded-xl bg-secondary/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm transition-all"
+          />
+          <button
+            type="submit"
+            disabled={!text.trim() || isSending}
+            className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:bg-primary/90 transition-all shrink-0"
+          >
+            {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </button>
+        </form>
+      )}
     </div>
   );
 }

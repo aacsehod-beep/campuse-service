@@ -1,6 +1,7 @@
 const Review = require('../models/Review');
 const User = require('../models/User');
 const Order = require('../models/Order');
+const mongoose = require('mongoose');
 
 // @route   POST /api/reviews
 exports.createReview = async (req, res) => {
@@ -39,10 +40,23 @@ exports.createReview = async (req, res) => {
       comment: comment?.trim(),
     });
 
-    // Update user rating
+    // Recompute user rating from actual review records for accurate aggregate value.
+    const targetUserId = new mongoose.Types.ObjectId(toUser);
+    const [ratingStats] = await Review.aggregate([
+      { $match: { toUser: targetUserId } },
+      {
+        $group: {
+          _id: '$toUser',
+          averageRating: { $avg: '$rating' },
+          totalRatings: { $sum: 1 },
+        },
+      },
+    ]);
+
     const targetUser = await User.findById(toUser);
-    if (targetUser) {
-      targetUser.updateRating(parseInt(rating));
+    if (targetUser && ratingStats) {
+      targetUser.rating = parseFloat((ratingStats.averageRating || 0).toFixed(1));
+      targetUser.totalRatings = ratingStats.totalRatings || 0;
       await targetUser.save();
     }
 
@@ -50,6 +64,14 @@ exports.createReview = async (req, res) => {
     if (isCustomer) order.isReviewedByCustomer = true;
     if (isProvider) order.isReviewedByProvider = true;
     await order.save();
+
+    // Notify order room so both customer and provider refresh profile/rating data in real-time.
+    const io = req.app.get('io');
+    io.to(`order_${order._id}`).emit('order_status_update', {
+      orderId: order._id,
+      status: order.status,
+      ratingUpdated: true,
+    });
 
     await review.populate('fromUser', 'name avatar rating');
 

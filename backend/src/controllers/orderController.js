@@ -19,7 +19,16 @@ exports.getOrders = async (req, res) => {
       filter.status = { $in: ['BROADCASTED', 'CREATED'] };
     }
 
-    // Geospatial filter
+    // Exclude orders from users the current user has blocked, and orders from users who blocked the current user
+    const currentUser = await User.findById(req.user._id).select('blockedUsers');
+    const blockedIds = currentUser?.blockedUsers || [];
+    if (blockedIds.length > 0) {
+      filter.userId = { $nin: blockedIds };
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Try geospatial query first; fall back to regular query if geo index missing
     if (lat && lng) {
       filter.location = {
         $near: {
@@ -29,16 +38,27 @@ exports.getOrders = async (req, res) => {
       };
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    const orders = await Order.find(filter)
-      .populate('userId', 'name avatar rating completedOrders hostel')
-      .populate('assignedTo', 'name avatar rating')
-      .sort({ isPriorityBoosted: -1, createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await Order.countDocuments(filter);
+    let orders;
+    let total;
+    try {
+      orders = await Order.find(filter)
+        .populate('userId', 'name avatar rating completedOrders hostel isVerified totalRatings reliabilityScore')
+        .populate('assignedTo', 'name avatar rating isVerified totalRatings reliabilityScore')
+        .sort({ isPriorityBoosted: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+      total = await Order.countDocuments(filter);
+    } catch (geoErr) {
+      // Geo query failed — retry without location filter
+      delete filter.location;
+      orders = await Order.find(filter)
+        .populate('userId', 'name avatar rating completedOrders hostel isVerified totalRatings reliabilityScore')
+        .populate('assignedTo', 'name avatar rating isVerified totalRatings reliabilityScore')
+        .sort({ isPriorityBoosted: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit));
+      total = await Order.countDocuments(filter);
+    }
 
     res.json({
       success: true,
@@ -60,15 +80,24 @@ exports.getOrders = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate('userId', 'name avatar rating completedOrders hostel phone')
-      .populate('assignedTo', 'name avatar rating completedOrders hostel phone isAvailable')
+      .populate('userId', 'name avatar rating completedOrders hostel phone isAvailable isVerified totalRatings reliabilityScore')
+      .populate('assignedTo', 'name avatar rating completedOrders hostel phone isAvailable isVerified totalRatings reliabilityScore')
       .populate({
         path: 'bids',
-        populate: { path: 'userId', select: 'name avatar rating completedOrders reliabilityScore' },
+        populate: { path: 'userId', select: 'name avatar rating completedOrders reliabilityScore totalRatings isVerified' },
       });
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const isOwner = order.userId._id.toString() === req.user._id.toString();
+
+    // Non-owners (other providers) only see their own bid, not competitors' bids/amounts
+    if (!isOwner && order.bids) {
+      order.bids = order.bids.filter(
+        (bid) => bid.userId._id.toString() === req.user._id.toString()
+      );
     }
 
     res.json({ success: true, order });
@@ -101,9 +130,15 @@ exports.createOrder = async (req, res) => {
 
     await order.populate('userId', 'name avatar rating hostel');
 
-    // Broadcast to nearby providers via Socket.io
+    // Broadcast to nearby providers via Socket.io — only to available users
     const io = req.app.get('io');
-    io.emit('new_order', { order });
+    // Get all connected sockets and only emit to available users
+    const sockets = await io.fetchSockets();
+    for (const sock of sockets) {
+      if (sock.user?.isAvailable && sock.userId !== order.userId._id.toString()) {
+        sock.emit('new_order', { order });
+      }
+    }
 
     // Find and notify nearby available providers
     if (location?.coordinates) {
@@ -178,6 +213,10 @@ exports.updateOrderStatus = async (req, res) => {
 
     const io = req.app.get('io');
     io.to(`order_${order._id}`).emit('order_status_update', { orderId: order._id, status, order });
+    // Remove from public feed when accepted/cancelled
+    if (status === 'CANCELLED') {
+      io.emit('feed_order_removed', { orderId: order._id });
+    }
 
     // Notify the other party
     const notifyUserId = isCustomer ? order.assignedTo : order.userId;
@@ -206,7 +245,7 @@ exports.acceptOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    if (order.mode !== 'fixed') {
+    if (!['fixed', 'instant'].includes(order.mode)) {
       return res.status(400).json({ success: false, message: 'This order requires bidding' });
     }
 
@@ -220,7 +259,7 @@ exports.acceptOrder = async (req, res) => {
 
     order.assignedTo = req.user._id;
     order.status = 'ACCEPTED';
-    order.finalPrice = order.budget;
+    order.finalPrice = order.budget || order.finalPrice;
     order.statusHistory.push({ status: 'ACCEPTED', note: `Accepted by ${req.user.name}` });
     await order.save();
 
@@ -229,6 +268,8 @@ exports.acceptOrder = async (req, res) => {
 
     const io = req.app.get('io');
     io.to(`order_${order._id}`).emit('order_status_update', { orderId: order._id, status: 'ACCEPTED', order });
+    // Remove from all providers' feeds immediately
+    io.emit('feed_order_removed', { orderId: order._id });
 
     // Notify customer
     const customer = await User.findById(order.userId).select('+fcmToken');
@@ -262,8 +303,8 @@ exports.getMyOrders = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const orders = await Order.find(filter)
-      .populate('userId', 'name avatar rating hostel')
-      .populate('assignedTo', 'name avatar rating hostel')
+      .populate('userId', 'name avatar rating hostel isVerified totalRatings reliabilityScore')
+      .populate('assignedTo', 'name avatar rating hostel isVerified totalRatings reliabilityScore')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
