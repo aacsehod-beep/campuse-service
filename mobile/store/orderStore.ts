@@ -93,6 +93,7 @@ export const useOrderStore = create<OrderStore>((set, get) => ({
   },
 
   updateOrderInList: (order) => {
+    if (!order?._id) return;
     set((state) => ({
       orders: state.orders.map((o) => (o._id === order._id ? order : o)),
       activeOrder: state.activeOrder?._id === order._id ? order : state.activeOrder,
