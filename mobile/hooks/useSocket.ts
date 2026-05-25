@@ -20,8 +20,9 @@ export function useSocket() {
     const socket = connectSocket(token);
 
     // New order broadcasted (for providers)
-    socket.on('new_order', ({ order }: { order: Order }) => {
-      if (order.userId._id !== user?._id) {
+    socket.on('new_order', ({ order }: { order?: Order }) => {
+      if (!order?._id) return;
+      if (order.userId?._id !== user?._id) {
         addNewOrder(order);
         addNotification({
           type: 'new_order',
@@ -43,9 +44,10 @@ export function useSocket() {
     });
 
     // New bid placed
-    socket.on('new_bid', ({ bid, orderId }: { bid: Bid; orderId: string }) => {
+    socket.on('new_bid', ({ bid, orderId }: { bid?: Bid; orderId: string }) => {
+      if (!bid?._id || !orderId) return;
       addBidToOrder(orderId, bid);
-      if (bid.userId._id !== user?._id) {
+      if (bid.userId?._id !== user?._id) {
         addNotification({
           type: 'new_bid',
           title: 'New bid received',
@@ -66,9 +68,10 @@ export function useSocket() {
     });
 
     // Bid accepted
-    socket.on('bid_accepted', ({ bid, order }: { bid: Bid; order: Order }) => {
+    socket.on('bid_accepted', ({ bid, order }: { bid?: Bid; order?: Order }) => {
+      if (!order?._id || !bid?._id) return;
       updateOrderInList(order);
-      if (bid.userId._id === user?._id) {
+      if (bid.userId?._id === user?._id) {
         addNotification({
           type: 'bid_accepted',
           title: 'Your bid was accepted! 🎉',
@@ -89,10 +92,11 @@ export function useSocket() {
     });
 
     // Order status update
-    socket.on('order_status_update', ({ order }: { order: Order }) => {
+    socket.on('order_status_update', ({ order }: { order?: Order }) => {
+      if (!order?._id) return;
       updateOrderInList(order);
       const isInvolved =
-        order.userId._id === user?._id || order.assignedTo?._id === user?._id;
+        order.userId?._id === user?._id || order.assignedTo?._id === user?._id;
       if (isInvolved) {
         addNotification({
           type: 'status_update',

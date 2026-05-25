@@ -66,11 +66,20 @@ exports.createReview = async (req, res) => {
     await order.save();
 
     // Notify order room so both customer and provider refresh profile/rating data in real-time.
+    const refreshedOrder = await Order.findById(order._id)
+      .populate('userId', 'name avatar rating completedOrders hostel phone isAvailable isVerified totalRatings reliabilityScore')
+      .populate('assignedTo', 'name avatar rating completedOrders hostel phone isAvailable isVerified totalRatings reliabilityScore')
+      .populate({
+        path: 'bids',
+        populate: { path: 'userId', select: 'name avatar rating completedOrders reliabilityScore totalRatings isVerified' },
+      });
+
     const io = req.app.get('io');
     io.to(`order_${order._id}`).emit('order_status_update', {
       orderId: order._id,
       status: order.status,
       ratingUpdated: true,
+      order: refreshedOrder,
     });
 
     await review.populate('fromUser', 'name avatar rating');
