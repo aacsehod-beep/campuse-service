@@ -1,14 +1,22 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNotificationStore } from '@/store/notificationStore';
+import { useAuthStore } from '@/store/authStore';
+import { useSocket } from '@/hooks/useSocket';
 
 const TAB_COLOR = '#8b5cf6';
 const TAB_INACTIVE = '#6b7280';
 const BG = '#0d0d14';
 
 export default function TabsLayout() {
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
   const { unreadCount } = useNotificationStore();
+
+  useSocket();
+
+  if (!_hasHydrated) return null;
+  if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
 
   return (
     <Tabs

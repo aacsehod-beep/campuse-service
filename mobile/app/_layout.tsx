@@ -1,38 +1,13 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
-import { useAuthStore } from '@/store/authStore';
-import { useSocket } from '@/hooks/useSocket';
 
 SplashScreen.preventAutoHideAsync();
-
-function AuthGuard() {
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
-  const segments = useSegments();
-  const router = useRouter();
-  const navigationState = useRootNavigationState();
-
-  useSocket();
-
-  useEffect(() => {
-    // Wait until both navigation is mounted AND auth store has hydrated from storage
-    if (!navigationState?.key || !_hasHydrated) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)/feed');
-    }
-  }, [isAuthenticated, segments, navigationState?.key, _hasHydrated]);
-
-  return null;
-}
 
 export default function RootLayout() {
   const [loaded] = useFonts({});
@@ -48,7 +23,6 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={DarkTheme}>
-        <AuthGuard />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />

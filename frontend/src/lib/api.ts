@@ -101,4 +101,14 @@ export const messagesAPI = {
     api.post(`/messages/${orderId}`, data),
 };
 
+// Admin
+export const adminAPI = {
+  getStats: () => api.get('/admin/stats'),
+  getHealth: () => api.get('/admin/health'),
+  getTransactions: (params?: Record<string, string | number>) =>
+    api.get('/admin/transactions', { params }),
+  toggleBanUser: (userId: string, ban: boolean) =>
+    api.patch(`/admin/users/${userId}/ban`, { ban }),
+};
+
 export default api;
