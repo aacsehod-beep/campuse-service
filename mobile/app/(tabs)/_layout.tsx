@@ -12,7 +12,6 @@ const BG = '#ffffff';
 export default function TabsLayout() {
   const { isAuthenticated, _hasHydrated } = useAuthStore();
   const { unreadCount } = useNotificationStore();
-  const { isAuthenticated } = useAuthStore();
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
 
   useSocket();
