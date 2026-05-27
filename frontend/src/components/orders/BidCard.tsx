@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bid, OrderStatus } from '@/types';
 import { useOrderStore } from '@/store/orderStore';
-import { formatCurrency, generateAvatarUrl, timeAgo } from '@/lib/utils';
+import { formatCurrency, timeAgo } from '@/lib/utils';
 import { Star, Clock, CheckCircle2, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+import UserAvatar from '@/components/ui/UserAvatar';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -45,11 +45,10 @@ export default function BidCard({ bid, orderId, isOwner, orderStatus }: Props) {
       )}
     >
       <div className="flex items-start gap-3">
-        <Image
-          src={(bid.userId as { avatar?: string; name: string })?.avatar || generateAvatarUrl((bid.userId as { name: string })?.name || 'User')}
-          alt={(bid.userId as { name: string })?.name || 'User'}
-          width={40}
-          height={40}
+        <UserAvatar
+          name={(bid.userId as { name: string })?.name || 'User'}
+          avatar={(bid.userId as { avatar?: string })?.avatar}
+          size={40}
           className="rounded-xl shrink-0"
         />
         <div className="flex-1 min-w-0">

@@ -6,12 +6,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function timeAgo(date: string | Date): string {
-  return formatDistanceToNow(new Date(date), { addSuffix: true });
+export function timeAgo(date: string | Date | undefined | null): string {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return formatDistanceToNow(d, { addSuffix: true });
 }
 
-export function formatDate(date: string | Date, fmt = 'MMM d, yyyy'): string {
-  return format(new Date(date), fmt);
+export function formatDate(date: string | Date | undefined | null, fmt = 'MMM d, yyyy'): string {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return format(d, fmt);
 }
 
 export function formatCurrency(amount: number): string {

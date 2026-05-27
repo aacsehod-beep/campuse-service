@@ -10,9 +10,16 @@ import toast from 'react-hot-toast';
 
 export function useSocket() {
   const { token, user } = useAuthStore();
-  const { addNewOrder, updateOrderInList, addBidToOrder } = useOrderStore();
+  const { addNewOrder, updateOrderInList, addBidToOrder, removeOrderFromFeed } = useOrderStore();
   const { addNotification } = useNotificationStore();
   const initialized = useRef(false);
+
+  // Request browser notification permission on first render
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   useEffect(() => {
     if (!token || initialized.current) return;
@@ -22,7 +29,10 @@ export function useSocket() {
 
     // New order broadcasted (for providers)
     socket.on('new_order', ({ order }: { order: Order }) => {
-      if (order.userId._id !== user?._id) {
+      const currentUser = useAuthStore.getState().user;
+      // If provider is offline, ignore incoming orders
+      if (!currentUser?.isAvailable) return;
+      if (order.userId._id !== currentUser?._id) {
         addNewOrder(order);
         addNotification({
           type: 'new_order',
@@ -36,8 +46,23 @@ export function useSocket() {
 
     // New bid placed
     socket.on('new_bid', ({ bid, orderId }: { bid: Bid; orderId: string }) => {
-      addBidToOrder(orderId, bid);
-      if (bid.userId._id !== user?._id) {
+      const currentUser = useAuthStore.getState().user;
+      const { activeOrder } = useOrderStore.getState();
+
+      // Check if current user is the order owner
+      const isOrderOwner =
+        activeOrder?._id === orderId &&
+        (typeof activeOrder.userId === 'string'
+          ? activeOrder.userId === currentUser?._id
+          : (activeOrder.userId as { _id: string })?._id === currentUser?._id);
+
+      // Only add bid to store if current user is the owner (or it's their own bid)
+      if (isOrderOwner || bid.userId._id === currentUser?._id) {
+        addBidToOrder(orderId, bid);
+      }
+
+      // Notify the order owner about new incoming bids
+      if (isOrderOwner && bid.userId._id !== currentUser?._id) {
         addNotification({
           type: 'new_bid',
           title: 'New bid received',
@@ -68,19 +93,38 @@ export function useSocket() {
       const isInvolved =
         order.userId._id === user?._id || order.assignedTo?._id === user?._id;
       if (isInvolved) {
+        const msg = `Status changed to ${order.status.replaceAll('_', ' ')}`;
         addNotification({
           type: 'status_update',
           title: 'Order Updated',
-          message: `Status changed to ${order.status}`,
+          message: msg,
           orderId: order._id,
         });
+        // Browser push notification
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('CampusHub — Order Update', { body: msg, icon: '/icon-192.png' });
+        }
+      }
+    });
+
+    // Remove order from feed when it's been accepted or cancelled elsewhere
+    socket.on('feed_order_removed', ({ orderId }: { orderId: string }) => {
+      removeOrderFromFeed(orderId);
+    });
+
+    // Notify user of personal updates (e.g. order accepted for customer)
+    socket.on('order_update', ({ message, orderId }: { message: string; orderId: string; status: string }) => {
+      addNotification({ type: 'status_update', title: 'Order Update', message, orderId });
+      toast(message, { icon: '🔔' });
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('CampusHub', { body: message, icon: '/icon-192.png' });
       }
     });
 
     return () => {
       initialized.current = false;
     };
-  }, [token, user, addNewOrder, updateOrderInList, addBidToOrder, addNotification]);
+  }, [token, user, addNewOrder, updateOrderInList, addBidToOrder, addNotification, removeOrderFromFeed]);
 
   return getSocket();
 }

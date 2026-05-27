@@ -1,4 +1,10 @@
-export type OrderCategory = 'food' | 'print' | 'notes' | 'ride' | 'others';
+import {
+  LucideIcon, Utensils, Printer, BookOpen, Bike,
+  ClipboardList, Code2, GraduationCap, Palette,
+  CalendarDays, ShoppingBag, Package,
+} from 'lucide-react';
+
+export type OrderCategory = 'food' | 'print' | 'notes' | 'ride' | 'assessment' | 'project' | 'coaching' | 'design' | 'event' | 'marketplace' | 'others';
 export type OrderStatus =
   | 'CREATED'
   | 'BROADCASTED'
@@ -34,6 +40,8 @@ export interface User {
   walletBalance: number;
   location?: Location;
   createdAt: string;
+  blockedUsers?: string[];
+  isBanned?: boolean;
 }
 
 export interface Order {
@@ -112,6 +120,32 @@ export interface Notification {
   createdAt: string;
 }
 
+export type ServicePriceType = 'fixed' | 'hourly' | 'negotiable';
+
+export interface Service {
+  _id: string;
+  userId: User | string;
+  title: string;
+  description: string;
+  category: OrderCategory;
+  priceType: ServicePriceType;
+  price: number;
+  tags: string[];
+  portfolio: string[];
+  rating: number;
+  reviewCount: number;
+  orderCount: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PublicProfile {
+  user: Pick<User, '_id' | 'name' | 'avatar' | 'hostel' | 'rating' | 'totalRatings' | 'completedOrders' | 'reliabilityScore'> & { createdAt: string };
+  services: Service[];
+  reviews: Review[];
+  completedOrders: number;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;
@@ -132,13 +166,19 @@ export interface PaginatedResponse<T> {
 
 export const CATEGORY_META: Record<
   OrderCategory,
-  { label: string; icon: string; color: string; bg: string }
+  { label: string; icon: LucideIcon; color: string; bg: string }
 > = {
-  food: { label: 'Food & Tiffin', icon: '🍱', color: 'text-orange-400', bg: 'bg-orange-500/10' },
-  print: { label: 'Printouts', icon: '🖨️', color: 'text-blue-400', bg: 'bg-blue-500/10' },
-  notes: { label: 'Notes', icon: '📝', color: 'text-green-400', bg: 'bg-green-500/10' },
-  ride: { label: 'Ride Share', icon: '🛵', color: 'text-purple-400', bg: 'bg-purple-500/10' },
-  others: { label: 'Others', icon: '📦', color: 'text-gray-400', bg: 'bg-gray-500/10' },
+  food:        { label: 'Food & Tiffin',  icon: Utensils,      color: 'text-orange-600',  bg: 'bg-orange-500/10' },
+  print:       { label: 'Printouts',      icon: Printer,       color: 'text-blue-600',    bg: 'bg-blue-500/10' },
+  notes:       { label: 'Notes',          icon: BookOpen,      color: 'text-green-600',   bg: 'bg-green-500/10' },
+  ride:        { label: 'Ride Share',     icon: Bike,          color: 'text-purple-600',  bg: 'bg-purple-500/10' },
+  assessment:  { label: 'Assessment',     icon: ClipboardList, color: 'text-red-600',     bg: 'bg-red-500/10' },
+  project:     { label: 'Project Help',   icon: Code2,         color: 'text-indigo-600',  bg: 'bg-indigo-500/10' },
+  coaching:    { label: 'Coaching',       icon: GraduationCap, color: 'text-teal-600',    bg: 'bg-teal-500/10' },
+  design:      { label: 'Design',         icon: Palette,       color: 'text-pink-600',    bg: 'bg-pink-500/10' },
+  event:       { label: 'Event Support',  icon: CalendarDays,  color: 'text-yellow-600',  bg: 'bg-yellow-500/10' },
+  marketplace: { label: 'Marketplace',    icon: ShoppingBag,   color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+  others:      { label: 'Others',         icon: Package,       color: 'text-gray-600',    bg: 'bg-gray-500/10' },
 };
 
 export const STATUS_META: Record<

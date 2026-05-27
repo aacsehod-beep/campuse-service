@@ -12,9 +12,10 @@ import BidCard from '@/components/orders/BidCard';
 import BidForm from '@/components/orders/BidForm';
 import ChatPanel from '@/components/orders/ChatPanel';
 import StatusActions from '@/components/orders/StatusActions';
-import { formatCurrency, timeAgo, generateAvatarUrl } from '@/lib/utils';
-import { Loader2, MapPin, Clock, Zap, User, Star } from 'lucide-react';
-import Image from 'next/image';
+import LiveTrackingPanel from '@/components/orders/LiveTrackingPanel';
+import { formatCurrency, timeAgo } from '@/lib/utils';
+import { Loader2, MapPin, Clock, Zap, Star, ArrowLeft } from 'lucide-react';
+import UserAvatar from '@/components/ui/UserAvatar';
 import Link from 'next/link';
 
 export default function OrderDetailPage() {
@@ -35,7 +36,7 @@ export default function OrderDetailPage() {
 
   if (isLoading || !order) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
         Loading order…
       </div>
@@ -43,7 +44,7 @@ export default function OrderDetailPage() {
   }
 
   const orderUser = typeof order.userId === 'string' ? null : order.userId as import('@/types').User;
-  const isOwner = orderUser?._id === user?._id;
+  const isOwner = orderUser?._id === user?._id || (typeof order.userId === 'string' && order.userId === user?._id);
   const isProvider = typeof order.assignedTo !== 'string' && order.assignedTo?._id === user?._id;
   const meta = CATEGORY_META[order.category];
   const statusMeta = STATUS_META[order.status];
@@ -53,134 +54,168 @@ export default function OrderDetailPage() {
     ['CREATED', 'BROADCASTED'].includes(order.status) &&
     !order.bids?.some((b) => (typeof b.userId === 'string' ? b.userId : (b.userId as { _id: string })?._id) === user?._id);
 
+  const canAcceptFixed =
+    !isOwner &&
+    !isProvider &&
+    order.mode === 'fixed' &&
+    ['CREATED', 'BROADCASTED'].includes(order.status);
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left col — main info */}
-      <div className="lg:col-span-2 space-y-5">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Header card */}
-          <div className="glass-card rounded-2xl p-6 space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl ${meta.bg} flex items-center justify-center text-xl`}>
-                  {meta.icon}
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground">{meta.label}</span>
-                  <p className="text-sm font-medium capitalize">{order.mode} price</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap justify-end">
-                {order.urgency === 'asap' && (
-                  <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-medium">
-                    <Zap className="w-3 h-3" />
-                    ASAP
-                  </span>
-                )}
-                <span className={`px-2 py-1 rounded-lg border text-xs font-medium ${statusMeta.bg} ${statusMeta.color}`} style={{ borderColor: 'transparent' }}>
-                  {statusMeta.label}
-                </span>
-              </div>
-            </div>
+    <div className="flex flex-col min-h-screen pb-[calc(var(--bottom-nav-height)+1rem)]">
+      {/* Sticky top bar */}
+      <div className="sticky top-0 z-30 bg-[hsl(var(--background))]/95 backdrop-blur-xl px-4 pt-5 pb-3 border-b border-[hsl(var(--border))] flex items-center gap-3">
+        <button onClick={() => router.back()} className="w-9 h-9 rounded-2xl bg-[hsl(var(--surface))] border border-[hsl(var(--border))] flex items-center justify-center shrink-0">
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate">{order.description}</p>
+          <p className="text-[11px] text-muted-foreground">{meta.label} · {order.mode}</p>
+        </div>
+        <span className={`px-2 py-1 rounded-lg text-[11px] font-semibold ${statusMeta.bg} ${statusMeta.color}`}>
+          {statusMeta.label}
+        </span>
+      </div>
 
-            <p className="text-foreground leading-relaxed">{order.description}</p>
-
-            {order.budget && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Budget:</span>
-                <span className="font-semibold text-primary">{formatCurrency(order.budget)}</span>
-              </div>
-            )}
-
-            {order.finalPrice && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Final price:</span>
-                <span className="font-bold text-green-400">{formatCurrency(order.finalPrice)}</span>
-              </div>
-            )}
-
-            {order.location?.address && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4 shrink-0" />
-                <span>{order.location.address}</span>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Clock className="w-3.5 h-3.5" />
-              Posted {timeAgo(order.createdAt)}
-            </div>
-          </div>
-
-          {/* Customer info */}
-          {orderUser && (
-          <div className="glass-card rounded-2xl p-4 flex items-center gap-4 mt-4">
-            <Image
-              src={orderUser.avatar || generateAvatarUrl(orderUser.name)}
-              alt={orderUser.name}
-              width={44}
-              height={44}
-              className="rounded-full ring-2 ring-border"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">{orderUser.name}</p>
-              <p className="text-xs text-muted-foreground">{orderUser.hostel || 'Campus'}</p>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-yellow-400">
-              <Star className="w-3.5 h-3.5 fill-current" />
-              {(orderUser.rating ?? 0).toFixed(1)}
-            </div>
-          </div>
-          )}
-
-          {/* Assigned provider */}
-          {order.assignedTo && typeof order.assignedTo !== 'string' && (
-            <div className="glass-card rounded-2xl p-4 flex items-center gap-4 mt-4 border-primary/20">
-              <div className="relative">
-                <Image
-                  src={order.assignedTo.avatar || generateAvatarUrl(order.assignedTo.name)}
-                  alt={order.assignedTo.name}
-                  width={44}
-                  height={44}
-                  className="rounded-full ring-2 ring-primary/30"
-                />
-                <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card" />
+      <div className="px-4 py-4 space-y-4">
+        {/* Header card */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="glass-card rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-11 h-11 rounded-2xl ${meta.bg} flex items-center justify-center shrink-0`}>
+                <meta.icon className={`w-5 h-5 ${meta.color}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">{order.assignedTo.name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color}`}>{meta.label}</span>
+                  <span className="text-[11px] text-muted-foreground capitalize">{order.mode} price</span>
+                  {order.urgency === 'asap' && (
+                    <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 text-[11px] font-semibold">
+                      <Zap className="w-3 h-3" /> ASAP
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-sm text-foreground leading-relaxed">{order.description}</p>
+
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              {order.budget && (
+                <span className="font-semibold text-primary">Budget: {formatCurrency(order.budget)}</span>
+              )}
+              {order.finalPrice && (
+                <span className="font-bold text-green-400">Final: {formatCurrency(order.finalPrice)}</span>
+              )}
+              {order.location?.address && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />{order.location.address.split(',')[0]}
+                </span>
+              )}
+              <span className="flex items-center gap-1 ml-auto">
+                <Clock className="w-3 h-3" />Posted {timeAgo(order.createdAt)}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Customer info */}
+        {orderUser && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <div className="glass-card rounded-2xl p-4 flex items-center gap-3">
+              <UserAvatar
+                name={orderUser.name}
+                avatar={orderUser.avatar ?? undefined}
+                size={42}
+                className="ring-2 ring-[hsl(var(--border))] shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">{orderUser.name}</p>
+                <p className="text-xs text-muted-foreground">{orderUser.hostel || 'Campus'}</p>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-yellow-400 shrink-0">
+                <Star className="w-3.5 h-3.5 fill-current" />
+                {(orderUser.rating ?? 0).toFixed(1)}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Assigned provider */}
+        {order.assignedTo && typeof order.assignedTo !== 'string' && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}>
+            <div className="glass-card rounded-2xl p-4 flex items-center gap-3 border border-primary/20">
+              <div className="relative shrink-0">
+                <UserAvatar
+                  name={order.assignedTo.name}
+                  avatar={order.assignedTo.avatar ?? undefined}
+                  size={42}
+                  className="ring-2 ring-[hsl(var(--primary))]/30"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-card" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">{order.assignedTo.name}</p>
                 <p className="text-xs text-primary">Assigned Provider</p>
               </div>
-              <div className="flex items-center gap-1 text-xs text-yellow-400">
+              <div className="flex items-center gap-1 text-xs text-yellow-400 shrink-0">
                 <Star className="w-3.5 h-3.5 fill-current" />
                 {(order.assignedTo.rating ?? 0).toFixed(1)}
               </div>
             </div>
-          )}
+          </motion.div>
+        )}
 
-          {/* Status actions */}
-          {(isOwner || isProvider) && <StatusActions order={order} isOwner={isOwner} isProvider={isProvider} />}
-
-          {/* Bid form for non-owner */}
-          {canBid && <BidForm orderId={order._id} />}
-
-          {/* Bids list */}
-          {order.mode === 'bidding' && order.bids && order.bids.length > 0 && (
-            <div className="mt-5 space-y-3">
-              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                {order.bids.length} Bid{order.bids.length !== 1 ? 's' : ''}
-              </h3>
-              {order.bids.map((bid) => (
-                <BidCard key={bid._id} bid={bid} orderId={order._id} isOwner={isOwner} orderStatus={order.status} />
-              ))}
-            </div>
-          )}
+        {/* Order Timeline */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <OrderTimeline statusHistory={order.statusHistory} currentStatus={order.status} />
         </motion.div>
-      </div>
 
-      {/* Right col — timeline + chat */}
-      <div className="space-y-5">
-        <OrderTimeline statusHistory={order.statusHistory} currentStatus={order.status} />
-        {(isOwner || isProvider) && <ChatPanel orderId={order._id} />}
+        {/* Status actions */}
+        {(isOwner || isProvider || canAcceptFixed) && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <StatusActions order={order} isOwner={isOwner} isProvider={isProvider} />
+          </motion.div>
+        )}
+
+        {/* Bid form for non-owner */}
+        {canBid && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+            <BidForm orderId={order._id} />
+          </motion.div>
+        )}
+
+        {/* Bids list */}
+        {order.mode === 'bidding' && order.bids && order.bids.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {order.bids.length} Bid{order.bids.length !== 1 ? 's' : ''}
+            </h3>
+            {order.bids.map((bid) => (
+              <BidCard key={bid._id} bid={bid} orderId={order._id} isOwner={isOwner} orderStatus={order.status} />
+            ))}
+          </motion.div>
+        )}
+
+        {/* Live Tracking — only when IN_PROGRESS and both parties are set */}
+        {(isOwner || isProvider) && order.status === 'IN_PROGRESS' && (
+          <LiveTrackingPanel
+            orderId={order._id}
+            isProvider={isProvider}
+            orderStatus={order.status}
+            providerName={
+              typeof order.assignedTo !== 'string' && order.assignedTo
+                ? order.assignedTo.name
+                : 'Provider'
+            }
+          />
+        )}
+
+        {/* Chat */}
+        {(isOwner || isProvider) && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <ChatPanel orderId={order._id} orderStatus={order.status} />
+          </motion.div>
+        )}
       </div>
     </div>
   );

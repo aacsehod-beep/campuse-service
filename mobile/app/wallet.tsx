@@ -63,7 +63,7 @@ export default function WalletScreen() {
         <Text style={styles.balanceLabel}>Total Balance</Text>
         <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
         <View style={styles.walletIcon}>
-          <Ionicons name="wallet" size={32} color="#a78bfa" />
+          <Ionicons name="wallet" size={32} color="#0c8a57" />
         </View>
       </Card>
 
@@ -87,7 +87,7 @@ export default function WalletScreen() {
           value={amount}
           onChangeText={setAmount}
           placeholder="Or enter custom amount"
-          placeholderTextColor="rgba(255,255,255,0.3)"
+          placeholderTextColor="#73897a"
           keyboardType="numeric"
           style={styles.amountInput}
         />
@@ -141,7 +141,7 @@ export default function WalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#0d0d14' },
+  scroll: { flex: 1, backgroundColor: '#f0faf4' },
   container: { padding: 16, gap: 14, paddingBottom: 40 },
   balanceCard: {
     alignItems: 'center',
@@ -149,44 +149,44 @@ const styles = StyleSheet.create({
     gap: 6,
     position: 'relative',
   },
-  balanceLabel: { fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
-  balanceValue: { fontSize: 36, fontWeight: '800', color: '#fff' },
+  balanceLabel: { fontSize: 12, color: '#73897a', fontWeight: '600' },
+  balanceValue: { fontSize: 36, fontWeight: '800', color: '#182a1e' },
   walletIcon: {
     position: 'absolute',
     top: 16,
     right: 16,
   },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#fff', marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#182a1e', marginBottom: 12 },
   quickAmounts: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   quickBtn: {
     flex: 1,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: '#d4e8da',
     alignItems: 'center',
   },
-  quickBtnActive: { backgroundColor: '#4c1d95', borderColor: '#7c3aed' },
-  quickText: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.6)' },
-  quickTextActive: { color: '#fff' },
+  quickBtnActive: { backgroundColor: '#e0f5ec', borderColor: '#0c8a57' },
+  quickText: { fontSize: 13, fontWeight: '700', color: '#73897a' },
+  quickTextActive: { color: '#0c8a57' },
   amountInput: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#ffffff',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    color: '#fff',
+    borderColor: '#d4e8da',
+    color: '#182a1e',
     fontSize: 14,
     padding: 12,
   },
-  empty: { fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: 20 },
+  empty: { fontSize: 13, color: '#73897a', textAlign: 'center', padding: 20 },
   txItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: '#d4e8da',
   },
   txIcon: {
     width: 36,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   txInfo: { flex: 1 },
-  txDesc: { fontSize: 13, fontWeight: '600', color: '#fff' },
-  txTime: { fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
+  txDesc: { fontSize: 13, fontWeight: '600', color: '#182a1e' },
+  txTime: { fontSize: 11, color: '#73897a', marginTop: 2 },
   txAmount: { fontSize: 14, fontWeight: '800' },
 });

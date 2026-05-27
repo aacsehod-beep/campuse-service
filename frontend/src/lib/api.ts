@@ -73,6 +73,9 @@ export const usersAPI = {
   getNearbyProviders: (lat: number, lng: number, radius?: number) =>
     api.get('/users/providers/nearby', { params: { lat, lng, radius } }),
   getAllUsers: (params?: Record<string, string | number>) => api.get('/users', { params }),
+  blockUser: (userId: string) => api.post(`/users/${userId}/block`, {}),
+  unblockUser: (userId: string) => api.delete(`/users/${userId}/block`),
+  getBlockedUsers: () => api.get('/users/me/blocked'),
 };
 
 // Reviews

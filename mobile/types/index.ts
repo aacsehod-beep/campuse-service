@@ -1,4 +1,4 @@
-export type OrderCategory = 'food' | 'print' | 'notes' | 'ride' | 'others';
+export type OrderCategory = 'food' | 'print' | 'notes' | 'ride' | 'assessment' | 'project' | 'coaching' | 'design' | 'event' | 'marketplace' | 'others';
 export type OrderStatus =
   | 'CREATED'
   | 'BROADCASTED'
@@ -138,6 +138,12 @@ export const CATEGORY_META: Record<
   print: { label: 'Printouts', icon: '🖨️', color: '#60a5fa', bg: 'rgba(59,130,246,0.1)' },
   notes: { label: 'Notes', icon: '📝', color: '#4ade80', bg: 'rgba(34,197,94,0.1)' },
   ride: { label: 'Ride Share', icon: '🛵', color: '#c084fc', bg: 'rgba(168,85,247,0.1)' },
+  assessment: { label: 'Assessment', icon: '📋', color: '#f87171', bg: 'rgba(239,68,68,0.1)' },
+  project: { label: 'Project', icon: '💻', color: '#818cf8', bg: 'rgba(99,102,241,0.1)' },
+  coaching: { label: 'Coaching', icon: '🎓', color: '#fbbf24', bg: 'rgba(245,158,11,0.1)' },
+  design: { label: 'Design', icon: '🎨', color: '#e879f9', bg: 'rgba(217,70,239,0.1)' },
+  event: { label: 'Event', icon: '🎉', color: '#2dd4bf', bg: 'rgba(20,184,166,0.1)' },
+  marketplace: { label: 'Marketplace', icon: '🛒', color: '#0c8a57', bg: 'rgba(12,138,87,0.1)' },
   others: { label: 'Others', icon: '📦', color: '#9ca3af', bg: 'rgba(107,114,128,0.1)' },
 };
 

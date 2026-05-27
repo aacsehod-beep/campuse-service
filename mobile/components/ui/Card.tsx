@@ -17,16 +17,16 @@ export function Card({ children, style, shadow = false }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#13131f',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: '#d4e8da',
     padding: 16,
   },
   shadow: {
-    shadowColor: '#000',
+    shadowColor: '#0c8a57',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 5,
   },

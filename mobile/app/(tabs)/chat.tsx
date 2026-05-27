@@ -142,8 +142,8 @@ export default function ChatScreen() {
                     <Avatar name={msg.senderId.name} size={28} />
                   )}
                   <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-                    <Text style={styles.bubbleText}>{msg.content}</Text>
-                    <Text style={styles.bubbleTime}>{timeAgo(msg.createdAt)}</Text>
+                    <Text style={[styles.bubbleText, !isMe && styles.bubbleTextThem]}>{msg.content}</Text>
+                    <Text style={[styles.bubbleTime, !isMe && styles.bubbleTimeThem]}>{timeAgo(msg.createdAt)}</Text>
                   </View>
                 </View>
               );
@@ -171,7 +171,7 @@ export default function ChatScreen() {
                 }
               }}
               placeholder="Type a message…"
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="#73897a"
               style={styles.chatInput}
             />
             <TouchableOpacity onPress={sendMessage} style={styles.sendBtn}>
@@ -214,12 +214,12 @@ export default function ChatScreen() {
                   <Text style={styles.convName}>{other?.name || 'Unknown'}</Text>
                   <Text style={styles.convOrder} numberOfLines={1}>{order.description}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.3)" />
+                  <Ionicons name="chevron-forward" size={18} color="#73897a" />
               </TouchableOpacity>
             );
           }}
           ItemSeparatorComponent={() => (
-            <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)' }} />
+            <View style={{ height: 1, backgroundColor: '#d4e8da' }} />
           )}
         />
       )}
@@ -228,18 +228,18 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0d0d14' },
+  safe: { flex: 1, backgroundColor: '#f0faf4' },
   flex: { flex: 1 },
   listHeader: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: '#d4e8da',
   },
-  listTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
+  listTitle: { fontSize: 20, fontWeight: '800', color: '#182a1e' },
   empty: { alignItems: 'center', paddingTop: 80, gap: 8 },
   emptyIcon: { fontSize: 48 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  emptyText: { fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center' },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#182a1e' },
+  emptyText: { fontSize: 13, color: '#73897a', textAlign: 'center' },
   convItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -247,21 +247,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   convInfo: { flex: 1 },
-  convName: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  convOrder: { fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 },
+  convName: { fontSize: 14, fontWeight: '700', color: '#182a1e' },
+  convOrder: { fontSize: 12, color: '#73897a', marginTop: 2 },
   // Thread
   threadHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: '#d4e8da',
     gap: 10,
   },
   backBtn: { padding: 4 },
   threadInfo: { flex: 1 },
-  threadName: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  threadOrder: { fontSize: 11, color: 'rgba(255,255,255,0.4)' },
+  threadName: { fontSize: 14, fontWeight: '700', color: '#182a1e' },
+  threadOrder: { fontSize: 11, color: '#73897a' },
   messageList: { padding: 14, gap: 10, flexGrow: 1 },
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 6 },
   msgRowMe: { flexDirection: 'row-reverse' },
@@ -272,40 +272,42 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bubbleMe: {
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#0c8a57',
     borderBottomRightRadius: 4,
   },
   bubbleThem: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#e6f4ec',
     borderBottomLeftRadius: 4,
   },
   bubbleText: { fontSize: 14, color: '#fff' },
-  bubbleTime: { fontSize: 10, color: 'rgba(255,255,255,0.5)', textAlign: 'right' },
+  bubbleTextThem: { color: '#182a1e' },
+  bubbleTime: { fontSize: 10, color: 'rgba(255,255,255,0.7)', textAlign: 'right' },
+  bubbleTimeThem: { color: '#73897a' },
   systemMsg: {
     textAlign: 'center',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.35)',
+    color: '#73897a',
     paddingVertical: 6,
   },
   typingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 14 },
-  typingDot: { fontSize: 20, color: 'rgba(255,255,255,0.4)', letterSpacing: 2 },
-  typingText: { fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+  typingDot: { fontSize: 20, color: '#73897a', letterSpacing: 2 },
+  typingText: { fontSize: 11, color: '#73897a' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: '#0d0d14',
+    borderTopColor: '#d4e8da',
+    backgroundColor: '#ffffff',
   },
   chatInput: {
     flex: 1,
-    backgroundColor: '#13131f',
+    backgroundColor: '#f0faf4',
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    color: '#fff',
+    borderColor: '#d4e8da',
+    color: '#182a1e',
     fontSize: 14,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -315,7 +317,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#0c8a57',
     alignItems: 'center',
     justifyContent: 'center',
   },

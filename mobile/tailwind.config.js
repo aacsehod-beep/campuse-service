@@ -5,15 +5,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#0d0d14',
-        surface: '#13131f',
-        'surface-2': '#1a1a2e',
-        border: 'rgba(255,255,255,0.08)',
-        violet: {
-          400: '#a78bfa',
-          500: '#8b5cf6',
-          600: '#7c3aed',
+        background: '#f0faf4',
+        surface: '#ffffff',
+        'surface-2': '#e6f4ec',
+        border: '#d4e8da',
+        foreground: '#182a1e',
+        muted: '#73897a',
+        primary: {
+          DEFAULT: '#0c8a57',
+          light: '#e0f5ec',
+          foreground: '#ffffff',
         },
+        accent: '#209e82',
       },
       fontFamily: {
         sans: ['System'],

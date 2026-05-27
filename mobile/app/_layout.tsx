@@ -1,4 +1,5 @@
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import '../global.css';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -6,8 +7,14 @@ import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
+import { useSocket } from '@/hooks/useSocket';
 
 SplashScreen.preventAutoHideAsync();
+
+function SocketInitializer() {
+  useSocket();
+  return null;
+}
 
 export default function RootLayout() {
   const [loaded] = useFonts({});
@@ -22,7 +29,8 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={DarkTheme}>
+      <ThemeProvider value={DefaultTheme}>
+        <SocketInitializer />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
@@ -31,8 +39,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               headerTitle: 'Order Details',
-              headerStyle: { backgroundColor: '#0d0d14' },
-              headerTintColor: '#ffffff',
+              headerStyle: { backgroundColor: '#f0faf4' },
+              headerTintColor: '#182a1e',
             }}
           />
           <Stack.Screen
@@ -40,8 +48,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               headerTitle: 'Wallet',
-              headerStyle: { backgroundColor: '#0d0d14' },
-              headerTintColor: '#ffffff',
+              headerStyle: { backgroundColor: '#f0faf4' },
+              headerTintColor: '#182a1e',
             }}
           />
           <Stack.Screen
@@ -49,8 +57,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               headerTitle: 'Notifications',
-              headerStyle: { backgroundColor: '#0d0d14' },
-              headerTintColor: '#ffffff',
+              headerStyle: { backgroundColor: '#f0faf4' },
+              headerTintColor: '#182a1e',
             }}
           />
           <Stack.Screen
@@ -58,8 +66,8 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               headerTitle: 'Provider Mode',
-              headerStyle: { backgroundColor: '#0d0d14' },
-              headerTintColor: '#ffffff',
+              headerStyle: { backgroundColor: '#f0faf4' },
+              headerTintColor: '#182a1e',
             }}
           />
         </Stack>

@@ -8,7 +8,7 @@ import BottomNav from '@/components/layout/Sidebar';
 import { connectSocket } from '@/lib/socket';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -17,13 +17,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isAdminRoute = pathname.startsWith('/admin');
 
   useEffect(() => {
+    if (!_hasHydrated) return; // wait for localStorage to rehydrate
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
     if (token) connectSocket(token);
-  }, [isAuthenticated, token, router]);
+  }, [isAuthenticated, token, _hasHydrated, router]);
 
+  // Show nothing until hydration is done (prevents flash redirect)
+  if (!_hasHydrated) return null;
   if (!isAuthenticated) return null;
 
   return (

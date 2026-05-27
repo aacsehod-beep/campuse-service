@@ -53,7 +53,7 @@ export function Avatar({ name, src, size = 40, online }: AvatarProps) {
 const styles = StyleSheet.create({
   image: { resizeMode: 'cover' },
   fallback: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: '#0c8a57',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -6,11 +6,11 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "campushub",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0d0d14"
+      "backgroundColor": "#f0faf4"
     },
     "ios": {
       "supportsTablet": false,
@@ -19,7 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#0d0d14"
+        "backgroundColor": "#0c8a57"
       },
       "package": "com.campushub.app",
       "permissions": [
@@ -38,7 +38,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
@@ -51,8 +51,8 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#6366f1",
+          "icon": "./assets/images/icon.png",
+          "color": "#0c8a57",
           "defaultChannel": "default"
         }
       ],
@@ -61,7 +61,8 @@
         {
           "photosPermission": "CampusHub accesses your photos to set a profile picture."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
@@ -71,6 +72,7 @@
       "eas": {
         "projectId": "709b8934-aa89-43c6-8be7-5ce08312c17d"
       }
-    }
+    },
+    "owner": "Jah"
   }
 }
